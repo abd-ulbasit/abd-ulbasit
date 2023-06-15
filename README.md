@@ -1,34 +1,23 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# Hello, I'm [Your Name](https://github.com/abd-ulbasit) 👋
 
-## Getting Started
+[![GitHub followers](https://img.shields.io/github/followers/abd-ulbasit?style=social)](https://github.com/abd-ulbasit?tab=followers)
+[![Twitter Follow](https://img.shields.io/twitter/follow/abd_lbasit?style=social)](https://twitter.com/abd_lbasit)
 
-First, run the development server:
+Welcome to my GitHub profile! I'm passionate about coding and open source. Here, you'll find information about my recent activities, contributions, and more.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-```
+## GitHub Stats
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+![GitHub Stats](https://github-readme-stats.vercel.app/api?username=abd-ulbasit&show_icons=true&count_private=true)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## My Latest Contributions
 
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
+<!--START_SECTION:activity-->
+<!--END_SECTION:activity-->
 
-## Learn More
+## Get in Touch
 
-To learn more about Next.js, take a look at the following resources:
+- LinkedIn: [abd-ulbasit](https://www.linkedin.com/in/abd-ulbasit/)
+- Twitter: [@abd_lbasit](https://twitter.com/abd_lbasit)
+- Personal Website: [abdulbasit.tech](https://abdulbasit.tech)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+Feel free to reach out to me! I'm always excited to connect and collaborate.
