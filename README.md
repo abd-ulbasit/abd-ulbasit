@@ -1,4 +1,4 @@
-# Hello, I'm [Abdul Basit](https://github.com/abd-ulbasit) 👋
+ Hello, I'm [Abdul Basit](https://github.com/abd-ulbasit) 
 
 [![GitHub followers](https://img.shields.io/github/followers/abd-ulbasit?style=social)](https://github.com/abd-ulbasit?tab=followers)
 [![Twitter Follow](https://img.shields.io/twitter/follow/abd_lbasit?style=social)](https://twitter.com/abd_lbasit)
@@ -18,7 +18,7 @@ Welcome to my GitHub profile! I'm passionate about Web Development and Open-Sour
 ## My Latest Contributions
 <!--START_SECTION:activity-->
 
-[![abd-ulbasit's github activity graph](https://github-readme-activity-graph.vercel.app/graph?username=abd-ulbasit&bg_color=fffff0&color=708090&line=24292e&point=24292e&area=true&hide_border=true&theme=merko)](https://github.com/abd-ulbasit)
+[![abd-ulbasit's github activity graph](https://github-readme-activity-graph.vercel.app/graph?username=abd-ulbasit&radius=16&area=true&hide_border=true&theme=xcode)](https://github.com/abd-ulbasit)
 <!--END_SECTION:activity-->
 
 ## Get in Touch
@@ -28,3 +28,6 @@ Welcome to my GitHub profile! I'm passionate about Web Development and Open-Sour
 - Personal Website: [abdulbasit.tech](https://abdulbasit.tech)
 
 Feel free to reach out to me! I'm always excited to connect and collaborate.
+
+<p align="right"> <img src="https://komarev.com/ghpvc/?username=abd-ulbasit&label=Profile%20views&color=0e75b6&style=flat" alt="0" />
+</p>
