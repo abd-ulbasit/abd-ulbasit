@@ -11,12 +11,12 @@ export default function Home() {
               Hello World!
             </span>
             I am
-            <span className='inline-block md:inline decoration-4  font-semibold underline text-orange-600 italic  px-2 rounded-sm font-sans   text-6xl' >
+            <span className='inline-block md:inline decoration-4  font-semibold underline text-orange-600 italic  px-2  font-sans text-7xl' >
               Abdul Basit
             </span>
           </h1>
           <p className='text-2xl text-center' >Studing Computer Science  <span className='text-yellow-400 block ' >&</span> building Quality Web Applications</p>
-          <p className="italic pt-4" >Together, we&apos;ll bring your ideas to life</p>
+          <p className="italic pt-4 text-gray-400" >Together, we&apos;ll bring your ideas to life.</p>
         </div>
         <Socials></Socials>
       </div>
