@@ -19,7 +19,7 @@ export default function RootLayout({
     <html lang="en">
       <body className={inter.className + ``}>
         <ThemeWrapper >
-          <div className='absolute right-8 top-4' >
+          <div className='absolute right-4 top-2' >
             <ThemeToggler></ThemeToggler>
           </div>
           {children}
