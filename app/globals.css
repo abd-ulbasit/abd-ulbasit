@@ -25,3 +25,20 @@ body {
     )
     rgb(var(--background-start-rgb));
 } */
+.theme-fade-enter {
+  opacity: 0;
+}
+
+.theme-fade-enter-active {
+  opacity: 1;
+  transition: opacity 300ms ease-in-out;
+}
+
+.theme-fade-exit {
+  opacity: 1;
+}
+
+.theme-fade-exit-active {
+  opacity: 0;
+  transition: opacity 300ms ease-in-out;
+}

@@ -1,8 +1,7 @@
-import Image from 'next/image'
 
 export default function Home() {
   return (
-    <main className="min-h-screen  bg-gradient-conic from-gray-900 to-gray-800 px-1 text-white">
+    <main className="min-h-screen  ">
 
       <div className='flex flex-col items-center  min-h-screen px-0 sm:px-12 py-4 md:px-24 ' >
         <h1 className='text-5xl font-mono px-auto py-8' >
