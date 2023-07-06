@@ -1,11 +1,52 @@
 "use client"
 import { useTheme } from "next-themes"
-import { FaRegMoon, FaSun } from "react-icons/fa"
+import { useEffect, useState } from "react"
 const ThemeToggler = () => {
-    const { theme, setTheme } = useTheme();
+    const themes = [
+        "light",
+        "dark",
+        "cupcake",
+        "bumblebee",
+        "emerald",
+        "corporate",
+        "synthwave",
+        "retro",
+        "cyberpunk",
+        "valentine",
+        "halloween",
+        "garden",
+        "forest",
+        "aqua",
+        "lofi",
+        "pastel",
+        "fantasy",
+        "wireframe",
+        "black",
+        "luxury",
+        "dracula",
+        "cmyk",
+        "autumn",
+        "business",
+        "acid",
+        "lemonade",
+        "night",
+        "coffee",
+        "winter",
+    ]
+    const [mounted, setMounted] = useState(false)
+    const { theme, setTheme } = useTheme()
+
+    // useEffect only runs on the client, so now we can safely show the UI
+
+    useEffect(() => {
+        setMounted(true)
+    }, [])
+
+    if (!mounted) {
+        return null
+    }
     return (
-        <button className={` text-primary-focus px-6 py-2`} onClick={() => { setTheme(theme == "night" ? "retro" : "night") }}  >{theme == "retro" ? <FaRegMoon></FaRegMoon> :
-            <FaSun></FaSun>}
+        <button className={`btn capitalize`} onClick={() => { setTheme(themes[Math.floor(Math.random() * themes.length)]) }}  >{theme}
         </button>
     );
 }

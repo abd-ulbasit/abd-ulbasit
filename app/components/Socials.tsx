@@ -11,7 +11,7 @@ function Socials() {
   >{socials.map((social) => {
 
     return <button key={social.src} onClick={(e) => { e.preventDefault(); window.open(`https://${social.src}`, "_blank") }}
-      className="btn px-6 py-0"
+      className="btn px-6 "
     >
       {<social.icon></social.icon>}
     </button>
