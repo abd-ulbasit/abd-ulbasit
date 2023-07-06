@@ -2,7 +2,7 @@ import Socials from "./components/Socials"
 export default function Home() {
   return (
     <main className="min-h-screen  ">
-      <div className='flex flex-col items-center justify-between  min-h-screen px-1 sm:px-12 py-4 md:px-24 ' >
+      <div className='flex flex-col items-center   min-h-screen px-1 sm:px-12 py-4 md:px-24 ' >
         <div className="flex flex-col gap-4 justify-between content-between flex-grow">
 
           <h1 className='text-5xl  px-auto py-8' >

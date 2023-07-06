@@ -1,12 +1,11 @@
 'use client'
 import type { IconType } from "react-icons"
-import { FaEnvelope, FaGithub, FaLinkedin, FaTwitter } from "react-icons/fa"
+import { FaGithub, FaLinkedin, FaTwitter } from "react-icons/fa"
+import { SiLeetcode } from "react-icons/si"
 function Socials() {
   //make an array socials that has opjects with two properties one is src one is icon that is of IconType
   interface social { src: string, icon: IconType }
-  const socials: social[] = [{ src: "www.github.com/abd-ulbasit", icon: FaGithub }, { src: "www.linkedin.com/in/abd-ulbasit", icon: FaLinkedin }, { src: "www.twitter.com/abd_lbasit", icon: FaTwitter },
-    // { src: "mailto:basit01035@gmail.com", icon: FaEnvelope }
-  ]
+  const socials: social[] = [{ src: "www.github.com/abd-ulbasit", icon: FaGithub }, { src: "www.linkedin.com/in/abd-ulbasit", icon: FaLinkedin }, { src: "www.twitter.com/abd_lbasit", icon: FaTwitter }, { src: "www.leetcode.com/abd-ulbasit", icon: SiLeetcode }]
   return <span
     className="inline-flex -space-x-px overflow-hidden rounded-md border bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900"
   >{socials.map((social) => {
@@ -17,9 +16,7 @@ function Socials() {
       {<social.icon></social.icon>}
     </button>
   })
-
     }
-
   </span>
 
 }
