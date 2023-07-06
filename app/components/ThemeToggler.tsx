@@ -4,7 +4,7 @@ import { FaRegMoon, FaSun } from "react-icons/fa"
 const ThemeToggler = () => {
     const { theme, setTheme } = useTheme();
     return (
-        <button className={` text-orange-600 px-6 py-2`} onClick={() => { setTheme(theme == "night" ? "retro" : "night") }}  >{theme == "retro" ? <FaRegMoon></FaRegMoon> :
+        <button className={` text-primary-focus px-6 py-2`} onClick={() => { setTheme(theme == "night" ? "retro" : "night") }}  >{theme == "retro" ? <FaRegMoon></FaRegMoon> :
             <FaSun></FaSun>}
         </button>
     );
