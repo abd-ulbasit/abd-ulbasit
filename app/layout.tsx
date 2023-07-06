@@ -15,7 +15,7 @@ export default function RootLayout({
 }) {
 
   return (
-    <html lang="en">
+    <html lang="en" data-theme="retro">
       <head>
         <link rel="icon" href="/favicon.ico" sizes='any' />
       </head>
