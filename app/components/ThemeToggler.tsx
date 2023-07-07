@@ -46,7 +46,7 @@ const ThemeToggler = () => {
         return null
     }
     return (
-        <button className={`btn capitalize`} onClick={() => { setTheme(themes[Math.floor(Math.random() * themes.length)]) }}  >{theme}
+        <button className={`btn capitalize  glass`} onClick={() => { setTheme(themes[Math.floor(Math.random() * themes.length)]) }}  >{theme}
         </button>
     );
 }
