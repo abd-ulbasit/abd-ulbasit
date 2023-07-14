@@ -49,7 +49,7 @@ export default function Home() {
       if ((e.target as HTMLElement).closest('#excludeDiv')) return;
       setTheme(themes[Math.floor(Math.random() * themes.length)])
     }}>
-      <div className="max-w-sm flex flex-col gap-4  border-4" id="excludeDiv">
+      <div className="max-w-sm flex flex-col gap-4" id="excludeDiv">
 
         <h1 className='text-4xl font-bold font-serif pl-2 sm:pl-0 hover:animate-pulse' >Abdul Basit</h1>
         <p className='italic indent-8  pl-1 sm:pl-0 ' >I study Computer Science. I am currently building applications in NEXTJS, and t3-stack . I also do Rust, system design, leetcode and advent of code.</p>

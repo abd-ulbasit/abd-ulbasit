@@ -21,9 +21,9 @@ export default function RootLayout({
       </head>
       <body >
         <ThemeWrapper >
-          <div className='absolute right-4 top-2' >
+          {/* <div className='absolute right-4 top-2' >
             <ThemeToggler></ThemeToggler>
-          </div>
+          </div> */}
           {children}
 
         </ThemeWrapper>
