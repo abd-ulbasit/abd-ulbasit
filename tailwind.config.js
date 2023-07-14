@@ -49,4 +49,8 @@ module.exports = {
             "winter",
         ],
     },
+    layers: {
+        // Define a new layer and include your custom classes
+        daisy: ["@layer components", "@layer utilities"],
+    },
 };

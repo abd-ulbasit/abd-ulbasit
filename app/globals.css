@@ -42,3 +42,12 @@ body {
   opacity: 0;
   transition: opacity 300ms ease-in-out;
 }
+::-moz-selection {
+ @apply bg-base-300 text-primary-focus
+}
+::-webkit-selection {
+ @apply bg-base-300 text-primary-focus
+}
+::selection {
+ @apply bg-base-300 text-primary-focus
+}
