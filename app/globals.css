@@ -1,7 +1,11 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
+@layer base{
+  main{
+    @apply bg-gradient-radial from-base-100 to-base-300
+  }
+}
 /* :root {
   --foreground-rgb: 0, 0, 0;
   --background-start-rgb: 214, 219, 220;
@@ -25,6 +29,25 @@ body {
     )
     rgb(var(--background-start-rgb));
 } */
+@layer utilities {
+  .grid-background {
+    background-image: linear-gradient(to right, transparent 1px, #cbd5e0 1px);
+    background-size: 16px 100%;
+    background-repeat: repeat-y;
+  }
+
+  .grid-background::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    background-image: linear-gradient(to bottom, transparent 1px, #cbd5e0 1px);
+    background-size: 100% 16px;
+    background-repeat: repeat-x;
+  }
+}
 .theme-fade-enter {
   opacity: 0;
 }
