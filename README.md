@@ -14,7 +14,11 @@ Welcome to my GitHub profile! I'm passionate about Web Development and Open-Sour
 <p align="center">
   <img src="https://readme-stats.clckblog.space/api/top-langs?username=abd-ulbasit&langs_count=10&show_icons=true&locale=en&layout=compact&theme=dark" alt="abd-ulbasit's favourite Stack">
 </p>
-
+<p align="center">
+  <a href="https://skillicons.dev">
+    <img src="https://skillicons.dev/icons?i=react,nextjs,ts,js,nodejs,vite,express,tailwind,css,rust,git,supabase,redis,prisma,netlify,mongodb,mysql,postgres,python,vim,vscode&perline=7" />
+  </a>
+</p>
 ## Get in Touch
 
 - LinkedIn: [abd-ulbasit](https://www.linkedin.com/in/abd-ulbasit/)
