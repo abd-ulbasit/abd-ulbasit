@@ -15,12 +15,6 @@ Welcome to my GitHub profile! I'm passionate about Web Development and Open-Sour
   <img src="https://readme-stats.clckblog.space/api/top-langs?username=abd-ulbasit&langs_count=10&show_icons=true&locale=en&layout=compact&theme=dark" alt="abd-ulbasit's favourite Stack">
 </p>
 
-## My Latest Contributions
-<!--START_SECTION:activity-->
-
-[![abd-ulbasit's github activity graph](https://github-readme-activity-graph.vercel.app/graph?username=abd-ulbasit&radius=16&area=true&hide_border=true&theme=xcode)](https://github.com/abd-ulbasit)
-<!--END_SECTION:activity-->
-
 ## Get in Touch
 
 - LinkedIn: [abd-ulbasit](https://www.linkedin.com/in/abd-ulbasit/)
