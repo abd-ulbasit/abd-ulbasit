@@ -44,6 +44,7 @@ export default function Home() {
   if (!mounted) {
     return null
   }
+  const content = "I study Computer Science and build applications in NEXTJS, and MERN Stack. I'm learning system programming in Rust"
   return (
     <main className="min-h-screen flex flex-col items-center justify-center " onClick={(e) => {
       if ((e.target as HTMLElement).closest('#excludeDiv')) return;
@@ -52,7 +53,18 @@ export default function Home() {
       <div className="max-w-sm flex flex-col gap-4" id="excludeDiv">
 
         <h1 className='text-4xl font-bold font-serif pl-2 sm:pl-0 hover:animate-pulse' >Abdul Basit</h1>
-        <p className='italic indent-8  pl-1 sm:pl-0 ' >I study Computer Science. I am currently building applications in NEXTJS, and t3-stack. I also do Rust, leetcode and system design.</p>
+        <p className='italic flex flex-wrap items-start gap-1' >
+          <span className="w-6" ></span>
+          {
+            content.split(" ").map((word) => {
+              return (
+                <span key={word} className="hover:animate-pulse">
+                  {word}
+                </span>
+              )
+            })
+          }
+        </p>
         <div className="mx-auto" >
           <Socials></Socials>
         </div>
