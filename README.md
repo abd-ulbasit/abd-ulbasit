@@ -3,7 +3,7 @@
 [![GitHub followers](https://img.shields.io/github/followers/abd-ulbasit?style=social)](https://github.com/abd-ulbasit?tab=followers)
 [![Twitter Follow](https://img.shields.io/twitter/follow/abd_lbasit?style=social)](https://twitter.com/abd_lbasit)
 
-Welcome to my GitHub profile! I'm passionate about Web Development and Open-Source. Here, you'll find information about my recent activities, contributions, and more.
+Welcome to my GitHub profile! I'm passionate about Web Development and System Programming. Here, you'll find information about my recent activities, contributions, and more.
 
 ## GitHub Stats
 
@@ -19,6 +19,7 @@ Welcome to my GitHub profile! I'm passionate about Web Development and Open-Sour
     <img src="https://skillicons.dev/icons?i=react,nextjs,ts,js,nodejs,vite,express,tailwind,css,rust,git,supabase,redis,prisma,netlify,mongodb,mysql,postgres,python,vim,vscode&perline=7" />
   </a>
 </p>
+
 ## Get in Touch
 
 - LinkedIn: [abd-ulbasit](https://www.linkedin.com/in/abd-ulbasit/)
