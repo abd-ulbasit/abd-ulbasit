@@ -44,7 +44,7 @@ export default function Home() {
   if (!mounted) {
     return null
   }
-  const content = "I study Computer Science and build applications in NEXTJS, and MERN Stack. I'm learning system programming in Rust"
+  const content = "I study Computer Science and build web apps with TypeScript (JS, sometimes). I'm gaining expertise in cloud-native development"
   return (
     <main className="min-h-screen flex flex-col items-center justify-center " onClick={(e) => {
       if ((e.target as HTMLElement).closest('#excludeDiv')) return;
@@ -52,7 +52,7 @@ export default function Home() {
     }}>
       <div className="max-w-sm flex flex-col gap-4" id="excludeDiv">
 
-        <h1 className='text-4xl font-bold font-serif pl-2 sm:pl-0 hover:animate-pulse' >Abdul Basit</h1>
+        <h1 className='text-4xl font-bold font-serif pl-2 sm:pl-0 hover:animate-pulse' >I'm Abdul Basit</h1>
         <p className='italic flex flex-wrap items-start gap-1' >
           <span className="w-6" ></span>
           {
