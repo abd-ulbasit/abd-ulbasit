@@ -52,7 +52,7 @@ export default function Home() {
     }}>
       <div className="max-w-sm flex flex-col gap-4" id="excludeDiv">
 
-        <h1 className='text-4xl font-bold font-serif pl-2 sm:pl-0 hover:animate-pulse' >I'm Abdul Basit</h1>
+        <h1 className='text-4xl font-bold font-serif pl-2 sm:pl-0 hover:animate-pulse' >I&apos;m Abdul Basit</h1>
         <p className='italic flex flex-wrap items-start gap-1' >
           <span className="w-6" ></span>
           {
