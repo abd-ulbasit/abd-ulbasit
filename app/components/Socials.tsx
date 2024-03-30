@@ -1,4 +1,3 @@
-'use client'
 import type { IconType } from "react-icons"
 import { FaGithub, FaLinkedin, FaTwitter } from "react-icons/fa"
 import { SiLeetcode } from "react-icons/si"
