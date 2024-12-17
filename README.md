@@ -29,6 +29,3 @@ Welcome to my GitHub profile! I'm passionate about Web Development and cloud-nat
 
 <p align="right"> <img src="https://komarev.com/ghpvc/?username=abd-ulbasit&label=Profile%20views&color=0e75b6&style=flat" alt="0" />
 </p>
-
-
-[View [Bug Report] Kyverno re-created the tls-ca secret and didn't update the bundle in all webhook configurations](https://gist.github.com/abd-ulbasit/e277311c7d5f6e4c2f62a16e2afab36b)
