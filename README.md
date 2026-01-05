@@ -1,9 +1,5 @@
 # Hello, I'm [Abdul Basit Sajid](https://github.com/abd-ulbasit) 
 
-[![GitHub followers](https://img.shields.io/github/followers/abd-ulbasit?style=social)](https://github.com/abd-ulbasit?tab=followers)
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-Connect-blue?style=social&logo=linkedin)](https://www.linkedin.com/in/abd-ulbasit/)
-
-## 👨‍💻 About Me
 
 Software Engineer with **2+ years of experience** in **distributed systems**, **cloud-native development**, and production backends. Building scalable infrastructure in Go (queues, proxies, gateways) while shipping backend services in NestJS, Django, Flask, Express, and FastAPI—with React/Next.js on the front.
 
