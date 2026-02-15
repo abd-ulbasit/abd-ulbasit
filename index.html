@@ -35,41 +35,26 @@
         margin-bottom: 30px;
       }
 
-      .refresh-text {
-        font-size: 0.9em;
-        color: #999;
-        font-style: italic;
+      .resume-link {
+        font-size: 0.95em;
+        color: #555;
+        text-decoration: none;
+        border-bottom: 1px solid #999;
+        padding-bottom: 2px;
+        transition: color 0.2s, border-color 0.2s;
       }
 
-      .pdf-container {
-        width: 100vw;
-        height: 100vh;
-        border: none;
+      .resume-link:hover {
+        color: #333;
+        border-color: #333;
       }
     </style>
   </head>
   <body>
-    <script>
-      // 50% probability to show PDF or text content
-      const showPdf = Math.random() < 0.5;
-
-      if (showPdf) {
-        // Show PDF - try URL parameter to hide sidebar (works in some browsers)
-        document.body.innerHTML = `
-                <iframe src="abdulbasit.pdf#toolbar=1&navpanes=0&scrollbar=0" class="pdf-container" type="application/pdf">
-                    <p>Your browser does not support PDFs. <a href="abdulbasit.pdf">Download the PDF</a>.</p>
-                </iframe>
-            `;
-      } else {
-        // Show centered text content
-        document.body.innerHTML = `
-                <div class="centered-content">
-                  <h1>I'm Abdul Basit</h1>
-                  <p>I build scalable distributed systems in Go — queues, proxies, and gateways — alongside battle-tested backends in NestJS, Django, Flask, and Express.</p>
-                  <div class="refresh-text">Refresh page to see my resume</div>
-                </div>
-            `;
-      }
-    </script>
+    <div class="centered-content">
+      <h1>I'm Abdul Basit</h1>
+      <p>I build scalable distributed systems in Go — queues, proxies, and gateways — alongside battle-tested backends in NestJS, Django, Flask, and Express.</p>
+      <a href="abdulbasit.pdf" target="_blank" class="resume-link">Want to know more?</a>
+    </div>
   </body>
 </html>
