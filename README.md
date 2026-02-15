@@ -1,11 +1,11 @@
 # Hello, I'm [Abdul Basit Sajid](https://github.com/abd-ulbasit) 
 
 
-Software Engineer with **2+ years of experience** in **distributed systems**, **cloud-native development**, and production backends. Building scalable infrastructure in Go (queues, proxies, gateways) while shipping backend services in NestJS, Django, Flask, Express, and FastAPI—with React/Next.js on the front.
+Software Engineer with **2+ years of experience** in **distributed systems**, **Kubernetes**, **cloud-native development**, and production backends. Building Kubernetes operators (custom CRDs/Controllers), distributed infrastructure in Go, and offline-first systems with CRDT-based sync — while shipping backend services in NestJS, Django, Flask, Express, and FastAPI with React/Next.js on the front.
 
-🎓 **Computer Science Graduate** from National University of Sciences and Technology, Islamabad  
-🏆 **AWS Certified Solutions Architect – Associate** (July 2025)  
-💡 Passionate about building **resilient** and **scalable systems** 
+🎓 **Computer Science Graduate** from National University of Sciences and Technology, Islamabad
+🏆 **AWS Certified Solutions Architect – Associate** (July 2025)
+💡 Passionate about building **resilient** and **scalable systems**
 
 ## 🛠️ Technical Skills
 
@@ -13,14 +13,14 @@ Software Engineer with **2+ years of experience** in **distributed systems**, **
 <p>
   <img src="https://skillicons.dev/icons?i=aws,docker,kubernetes,nginx" />
   <br>
-  <strong>Docker • Kubernetes • AWS • CI/CD • Nginx • Container Orchestration • Infrastructure Automation</strong>
+  <strong>Kubernetes Operators • Custom CRDs/Controllers • Docker • AWS • CI/CD • Nginx • Container Orchestration • Infrastructure Automation</strong>
 </p>
 
 ### Backend & Distributed Systems
 <p>
   <img src="https://skillicons.dev/icons?i=golang,nodejs,express,nestjs,python,django,flask,fastapi" />
   <br>
-  <strong>Go • Distributed Systems • Message Queues • API Gateways • Load Balancing • NestJS • Express.js • Django • Flask • FastAPI</strong>
+  <strong>Go • Distributed Systems • CRDT Sync • Offline-First Architecture • Message Queues • API Gateways • Load Balancing • NestJS • Express.js • Django • Flask • FastAPI</strong>
 </p>
 
 ### Frontend Development
@@ -48,9 +48,9 @@ Software Engineer with **2+ years of experience** in **distributed systems**, **
 
 ## 🎯 Current Focus
 
-- 🔧 **Distributed Systems in Go** — Queues, proxies, gateways, and reliability patterns
-- 🌐 **High-Performance Networking** — L4/L7 proxying, load balancing, circuit breakers
-- ☁️ **Cloud-Native Infrastructure** — Kubernetes, Docker, container orchestration
+- 🔧 **Kubernetes & Platform Engineering** — Custom operators, CRDs/Controllers, self-service infrastructure provisioning
+- 🌐 **Distributed Systems in Go** — Queues, proxies, gateways, CRDT sync, and reliability patterns
+- ☁️ **Cloud-Native Infrastructure** — Kubernetes, Docker, container orchestration, operator patterns
 - 🛠️ **Production Backends** — NestJS, Django, Flask, Express, FastAPI supporting frontends in React/Next.js
 
 ## 🌟 Soft Skills
@@ -71,7 +71,7 @@ Software Engineer with **2+ years of experience** in **distributed systems**, **
 
 <div align="center">
 
-**Open to opportunities in Software Engineering, Cloud-Native Development, and DevOps Engineering roles**
+**Open to opportunities in Software Engineering, Platform Engineering, and Cloud-Native Development roles**
 
 </div>
 
