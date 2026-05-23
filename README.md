@@ -1,7 +1,7 @@
 # Hello, I'm [Abdul Basit Sajid](https://github.com/abd-ulbasit) 
 
 
-Software Engineer with **2+ years of experience** in **distributed systems**, **Kubernetes**, **cloud-native development**, and production backends. Building Kubernetes operators (custom CRDs/Controllers), distributed infrastructure in Go, and offline-first systems with CRDT-based sync — while shipping backend services in NestJS, Django, Flask, Express, and FastAPI with React/Next.js on the front.
+Software Engineer with **3+ years of experience** in **distributed systems**, **Kubernetes**, **cloud-native development**, and production backends. Building Kubernetes operators (custom CRDs/Controllers), distributed infrastructure in Go, and offline-first systems with CRDT-based sync — while shipping backend services in NestJS, Django, Flask, Express, and FastAPI with React/Next.js on the front.
 
 🎓 **Computer Science Graduate** from National University of Sciences and Technology, Islamabad
 🏆 **AWS Certified Solutions Architect – Associate** (July 2025)
