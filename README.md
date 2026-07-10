@@ -5,6 +5,7 @@
     <img alt="Abdul Basit Sajid's GitHub profile: a terminal-style card with an ASCII portrait and live GitHub stats" src="dark_mode.svg">
   </picture>
 </a>
+<img src="https://komarev.com/ghpvc/?username=abd-ulbasit&style=pixel" alt="" width="1" height="1">
 
 <!--
 Stats update daily via .github/workflows/build.yaml (today.py).
