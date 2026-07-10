@@ -176,6 +176,7 @@ def build_card():
           '<tspan class="value" id="loc_data">0</tspan> ( <tspan class="addColor" id="loc_add">0</tspan>'
           '<tspan class="addColor">++</tspan>, <tspan id="loc_del_dots"> ...... </tspan>'
           '<tspan class="delColor" id="loc_del">0</tspan><tspan class="delColor">--</tspan> )')
+    c.field('Profile Views', '1,566', value_id='pview_data')
     return c.rows
 
 

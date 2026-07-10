@@ -286,12 +286,14 @@ def stars_counter(data):
     return sum(node['node']['stargazers']['totalCount'] for node in data)
 
 
-def svg_overwrite(filename, age_data, commit_data, star_data, repo_data, contrib_data, follower_data, loc_data):
+def svg_overwrite(filename, age_data, commit_data, star_data, repo_data, contrib_data, follower_data, loc_data, pview_data):
     """
     Updates the id-tagged elements of an SVG card with the latest values.
     """
     tree = etree.parse(filename)
     root = tree.getroot()
+    if pview_data is not None:
+        justify_format(root, 'pview_data', pview_data, 40)
     # each length is the dots+value budget that right-aligns its line to
     # the 58-char column built by scripts/generate_svg.py
     justify_format(root, 'age_data', age_data, 47)
@@ -377,6 +379,24 @@ def follower_getter(username):
     return int(request.json()['data']['user']['followers']['totalCount'])
 
 
+def profile_views_getter(username):
+    """
+    Parses the current view count out of the komarev badge SVG. The README
+    embeds the invisible style=pixel variant, which does the actual counting;
+    this fetch adds one view per day, which is negligible.
+    Returns None on failure so a komarev outage doesn't fail the whole run.
+    """
+    import re
+    try:
+        resp = requests.get(f'https://komarev.com/ghpvc/?username={username}', timeout=30)
+        resp.raise_for_status()
+        counts = re.findall(r'>([\d,]+)</text>', resp.text)
+        return int(counts[-1].replace(',', ''))
+    except Exception as exc:
+        print('profile views fetch failed, keeping previous value:', exc)
+        return None
+
+
 def query_count(funct_id):
     global QUERY_COUNT
     QUERY_COUNT[funct_id] += 1
@@ -412,12 +432,14 @@ if __name__ == '__main__':
     formatter('contrib counter', contrib_time)
     follower_data, follower_time = perf_counter(follower_getter, USER_NAME)
     formatter('follower counter', follower_time)
+    pview_data, pview_time = perf_counter(profile_views_getter, USER_NAME)
+    formatter('profile views', pview_time)
 
     for index in range(len(total_loc) - 1):
         total_loc[index] = '{:,}'.format(total_loc[index])  # format added, deleted, and total LOC
 
-    svg_overwrite('dark_mode.svg', age_data, commit_data, star_data, repo_data, contrib_data, follower_data, total_loc[:-1])
-    svg_overwrite('light_mode.svg', age_data, commit_data, star_data, repo_data, contrib_data, follower_data, total_loc[:-1])
+    svg_overwrite('dark_mode.svg', age_data, commit_data, star_data, repo_data, contrib_data, follower_data, total_loc[:-1], pview_data)
+    svg_overwrite('light_mode.svg', age_data, commit_data, star_data, repo_data, contrib_data, follower_data, total_loc[:-1], pview_data)
 
     print('Total GitHub GraphQL API calls:', '{:>3}'.format(sum(QUERY_COUNT.values())))
     for funct_name, count in QUERY_COUNT.items():
