@@ -16,7 +16,7 @@ Usage:
 import sys
 import html
 
-from PIL import Image, ImageEnhance, ImageOps
+from PIL import Image, ImageEnhance, ImageFilter, ImageOps
 
 USERNAME = 'abd-ulbasit'
 CARD_WIDTH_PX = 985
@@ -70,7 +70,21 @@ def to_ascii(rgba, invert, gamma):
     lines = []
     for y in range(rows):
         lines.append(''.join(RAMP[px[x, y] * (len(RAMP) - 1) // 255] for x in range(ASCII_COLS)))
-    return lines
+
+    # faint dot grid behind the silhouette: a '.' every 3rd col / 2nd row on
+    # cells outside the subject mask (dilated one cell so the edge stays crisp)
+    if rgba.mode == 'RGBA':
+        mask = rgba.split()[-1].crop(ASCII_CROP).resize((ASCII_COLS, rows), Image.LANCZOS)
+        mask = mask.point(lambda v: 255 if v > 60 else 0).filter(ImageFilter.MaxFilter(3))
+        mpx = mask.load()
+        bg_lines = []
+        for y in range(rows):
+            bg_lines.append(''.join(
+                '.' if (x % 3 == 0 and y % 2 == 0 and not mpx[x, y]) else ' '
+                for x in range(ASCII_COLS)))
+    else:
+        bg_lines = [' ' * ASCII_COLS] * rows
+    return lines, bg_lines
 
 
 def esc(s):
@@ -165,7 +179,7 @@ def build_card():
     return c.rows
 
 
-def render_svg(theme, ascii_lines, card_rows):
+def render_svg(theme, ascii_lines, bg_lines, card_rows):
     height = 30 + LINE_HEIGHT_PX * (len(card_rows) - 1) + 20
     ascii_block_h = len(ascii_lines) * ASCII_LINE_PX
     ascii_y0 = max(20, (height - ascii_block_h) // 2 + 8)
@@ -191,8 +205,13 @@ def render_svg(theme, ascii_lines, card_rows):
         'text, tspan {white-space: pre;}',
         '</style>',
         f'<rect width="{CARD_WIDTH_PX}px" height="{height}px" fill="{theme["bg"]}" rx="15"/>',
-        f'<text x="{ASCII_X}" y="{ascii_y0}" fill="{theme["fg"]}" class="ascii">',
+        f'<text x="{ASCII_X}" y="{ascii_y0}" class="ascii cc">',
     ]
+    for i, line in enumerate(bg_lines):
+        if line.strip():
+            parts.append(f'<tspan x="{ASCII_X}" y="{ascii_y0 + i * ASCII_LINE_PX}">{esc(line.rstrip())}</tspan>')
+    parts.append('</text>')
+    parts.append(f'<text x="{ASCII_X}" y="{ascii_y0}" fill="{theme["fg"]}" class="ascii">')
     for i, line in enumerate(ascii_lines):
         parts.append(f'<tspan x="{ASCII_X}" y="{ascii_y0 + i * ASCII_LINE_PX}">{esc(line)}</tspan>')
     parts.append('</text>')
@@ -210,7 +229,7 @@ if __name__ == '__main__':
     avatar = Image.open(photo)
     card_rows = build_card()
     for filename, theme in THEMES.items():
-        ascii_lines = to_ascii(avatar, theme['invert'], theme['gamma'])
+        ascii_lines, bg_lines = to_ascii(avatar, theme['invert'], theme['gamma'])
         with open(filename, 'w') as f:
-            f.write(render_svg(theme, ascii_lines, card_rows))
+            f.write(render_svg(theme, ascii_lines, bg_lines, card_rows))
         print(f'wrote {filename} ({len(ascii_lines)} ascii rows)')
