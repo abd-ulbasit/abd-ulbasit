@@ -158,7 +158,7 @@ def build_card():
     c.field('Focus.Hardware', 'Homelab (ThinkPad k8s cluster)')
     c.gap()
     c.header('- Contact')
-    c.field('Email', 'basit01035@gmail.com')
+    c.field('Email', 'basit@basit.engineer')
     c.field('LinkedIn', 'abd-ulbasit')
     c.field('Portfolio', 'abd-ulbasit.vercel.app')
     c.gap()

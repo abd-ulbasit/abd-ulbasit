@@ -57,7 +57,7 @@ already solves GraphQL pagination and lines-of-code caching.
   **Languages.Real:** English, Urdu
 - **Hobbies.Software:** Kubernetes Operators, CRDT Sync —
   **Hobbies.Hardware:** Homelab (ThinkPad k8s cluster)
-- **Contact:** basit01035@gmail.com, LinkedIn `abd-ulbasit`,
+- **Contact:** basit@basit.engineer, LinkedIn `abd-ulbasit`,
   Portfolio `abd-ulbasit.vercel.app`
 - **GitHub Stats (live):** Repos {Contributed}, Stars, Commits, Followers,
   Lines of Code (net, +added / −deleted)
