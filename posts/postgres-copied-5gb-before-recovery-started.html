@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Postgres copied 5 GiB before recovery started — Abdul Basit Sajid</title>
+    <title>Postgres copied 5 GiB before recovery started · Abdul Basit Sajid</title>
     <meta
       name="description"
       content="My copy-on-write Postgres branching benchmark said a 5 GiB branch took 61.9 s and left a 5.05 GiB writable layer. The cause was a pre-recovery fsync pass opening every data file O_RDWR, which forces a full OverlayFS copy-up."
@@ -79,7 +79,7 @@
             I've been building <a href="https://github.com/abd-ulbasit/pgbranch" rel="noopener">pgbranch</a>, which
             gives you copy-on-write branches of a Postgres database: seed once from a running server, then create
             disposable, writable copies that share the base data and store only what they change. Each branch is a
-            stock <code>postgres</code> container whose <code>PGDATA</code> is an OverlayFS mount — the seeded source
+            stock <code>postgres</code> container whose <code>PGDATA</code> is an OverlayFS mount: the seeded source
             volume read-only below, an empty writable volume on top.
           </p>
 
@@ -107,7 +107,7 @@
           <div class="scroll">
             <table>
               <caption>
-                Before the fix. Branch creation scaled with database size — the opposite of what a copy-on-write
+                Before the fix. Branch creation scaled with database size, the opposite of what a copy-on-write
                 system should do.
               </caption>
               <thead>
@@ -133,7 +133,7 @@
           </div>
 
           <p>
-            Individual 5 GiB runs: 69.9, 66.1, 61.4, 60.0, 61.9 s. Not noise, not a cold-cache artifact — a stable
+            Individual 5 GiB runs: 69.9, 66.1, 61.4, 60.0, 61.9 s. Not noise, not a cold-cache artifact: a stable
             cost that scaled with data size.
           </p>
 
@@ -146,7 +146,7 @@
             </li>
             <li>
               Divide bytes by seconds and you get ~87 MB/s at 5 GiB and ~140 MB/s at 1 GiB. That's not a Postgres
-              number, it's a disk number — the smaller dataset fits the VM's page cache and the larger one doesn't.
+              number, it's a disk number. The smaller dataset fits the VM's page cache and the larger one doesn't.
               Create time wasn't being spent on anything clever. It was being spent moving bytes.
             </li>
           </ol>
@@ -174,7 +174,7 @@
           </p>
 
           <p>
-            Before replaying WAL, Postgres syncs the data directory — <code>SyncDataDirectory()</code>. The point is
+            Before replaying WAL, Postgres syncs the data directory in <code>SyncDataDirectory()</code>. The point is
             durability: if the cluster crashed once, there may be dirty pages from before the crash sitting in the OS
             page cache, and recovery must not build on top of writes that could still be lost. So Postgres walks the
             entire data directory and fsyncs every file in it, before it touches the WAL.
@@ -206,7 +206,7 @@ CloseTransientFile(fd);</code></pre>
 
           <p>
             The kernel's overlayfs documentation puts it plainly: when a file in the lower layer is accessed in a way
-            that requires write access — "such as opening for write access" — it is first copied from the lower
+            that requires write access ("such as opening for write access"), it is first copied from the lower
             filesystem to the upper filesystem.
           </p>
 
@@ -220,8 +220,8 @@ CloseTransientFile(fd);</code></pre>
 
           <p>
             If you want to see it with Postgres out of the way, here is the whole mechanism with nothing else in the
-            frame. Run it as root, with the scratch directory on ext4 or xfs — tmpfs isn't accepted as an
-            <code>upperdir</code>:
+            frame. Run it as root, with the scratch directory on ext4 or xfs (tmpfs isn't accepted as an
+            <code>upperdir</code>):
           </p>
 
           <pre><code>mkdir -p /var/tmp/ovl/{lower,upper,work,merged}
@@ -230,7 +230,7 @@ mount -t overlay overlay \
   -o lowerdir=/var/tmp/ovl/lower,upperdir=/var/tmp/ovl/upper,workdir=/var/tmp/ovl/work \
   /var/tmp/ovl/merged
 
-find /var/tmp/ovl/upper -type f    # nothing — the upper layer is empty
+find /var/tmp/ovl/upper -type f    # nothing yet, the upper layer is empty
 
 # open read-write, write nothing, close
 python3 -c 'import os; os.close(os.open("/var/tmp/ovl/merged/big", os.O_RDWR))'
@@ -242,11 +242,11 @@ du -sh  /var/tmp/ovl/upper/big     # 100M</code></pre>
             Now put the two halves together. Postgres opens every file in <code>PGDATA</code> read-write to fsync it.
             OverlayFS copies up every file that is opened read-write. So the durability pass that runs
             <em>before</em> recovery copied the entire dataset into the branch's supposedly-empty writable layer,
-            before the branch served a single query — in preparation for a WAL replay that then took 0.00 seconds.
+            before the branch served a single query. All in preparation for a WAL replay that then took 0.00 seconds.
           </p>
 
           <p>
-            The mechanism isn't specific to Postgres. Anything that fsyncs a directory tree at startup
+            The mechanism isn't specific to Postgres. Anything that fsyncs a directory tree at startup,
             or opens files read-write to check them, will do this on any overlay-backed filesystem. That's every
             container image layer in the world.
           </p>
@@ -264,7 +264,7 @@ du -sh  /var/tmp/ovl/upper/big     # 100M</code></pre>
           <pre><code>exec docker-entrypoint.sh postgres -c recovery_init_sync_method=syncfs</code></pre>
 
           <p>
-            That run finished recovery with the writable layer at <strong>16 KiB</strong>. Not 5 GiB, not 500 MiB —
+            That run finished recovery with the writable layer at <strong>16 KiB</strong>. Not 5 GiB, not 500 MiB:
             16 KiB. One variable, and the copy disappeared entirely.
           </p>
 
@@ -302,7 +302,7 @@ du -sh  /var/tmp/ovl/upper/big     # 100M</code></pre>
           </div>
 
           <p>
-            And creation is now flat in database size — 1.90 s at 1 GiB, 1.89 s at 5 GiB — which is what a
+            And creation is now flat in database size (1.90 s at 1 GiB, 1.89 s at 5 GiB), which is what a
             copy-on-write system is supposed to look like. The 33.1 MiB is recycled WAL segments written during
             recovery plus overlay bookkeeping.
           </p>
@@ -310,7 +310,7 @@ du -sh  /var/tmp/ovl/upper/big     # 100M</code></pre>
           <p>
             <strong>Why <code>syncfs</code> is safe here, specifically.</strong> <code>syncfs()</code> syncs the whole
             filesystem containing the data directory, which is a <em>superset</em> of what the per-file pass covers,
-            so the property that pass exists to guarantee — no pre-recovery dirty pages left unflushed — still holds,
+            so the property that pass exists to guarantee (no pre-recovery dirty pages left unflushed) still holds,
             and crash-recovery semantics don't change. The documented downsides of <code>syncfs</code> are that I/O
             errors on unrelated files on the same filesystem can be reported to you, and that on some kernels errors
             can be missed; both are scoped to <em>other files on the same filesystem</em>, and a pgbranch branch's
@@ -334,8 +334,8 @@ du -sh  /var/tmp/ovl/upper/big     # 100M</code></pre>
               <strong>+179.1 MiB</strong> before, and lands it at <strong>5.20 GiB</strong> after.
             </p>
             <p>
-              Those two numbers measure different things — the old probe measured incremental growth of a
-              fully-materialized layer, the new one measures copy-up from scratch — but the underlying trade is real.
+              Those two numbers measure different things. The old probe measured incremental growth of a
+              fully-materialized layer; the new one measures copy-up from scratch. But the underlying trade is real.
               A bulk <code>UPDATE</code> plus <code>CHECKPOINT</code> touching every segment converges on roughly 1×
               the database.
             </p>
@@ -343,8 +343,8 @@ du -sh  /var/tmp/ovl/upper/big     # 100M</code></pre>
 
           <p>
             So the honest statement is:
-            <strong>the cost moved from pay-at-create to pay-per-file-written.</strong> For the workload this is built
-            for — dev, CI, and PR-review branches that read a lot and write a little — that's strictly better, and
+            <strong>the cost moved from pay-at-create to pay-per-file-written.</strong> pgbranch is built for dev, CI,
+            and PR-review branches that read a lot and write a little. For that workload it's strictly better, and
             branches stay in the tens of megabytes. For a branch that rewrites its whole dataset, it's a wash.
             Block-level copy-on-write (ZFS, or a CSI driver with real snapshots) doesn't have this problem at all,
             because its copy-up granularity is a block rather than a file. That's a genuine advantage of those
@@ -357,16 +357,16 @@ du -sh  /var/tmp/ovl/upper/big     # 100M</code></pre>
 
           <p>
             There are good tools here and I'm not going to pretend otherwise. <a href="https://neon.tech" rel="noopener">Neon</a>
-            and <a href="https://supabase.com" rel="noopener">Supabase</a> both do database branching well — but in
+            and <a href="https://supabase.com" rel="noopener">Supabase</a> both do database branching well. But in
             their clouds, on their storage. You can't point them at the Postgres you already run.
             <a href="https://postgres.ai/products/how-it-works" rel="noopener">DBLab</a> is the established
-            self-hosted answer, and it's block-level CoW, which as noted is technically the better primitive — the
+            self-hosted answer, and it's block-level CoW, which as noted is technically the better primitive. The
             cost is that you provision and operate a ZFS or LVM pool for it.
           </p>
 
           <p>
-            pgbranch takes the middle path: plain Docker or Kubernetes, stock Postgres images, and OverlayFS — the
-            same mechanism container images already use — applied to <code>PGDATA</code>. No special filesystem, no
+            pgbranch takes the middle path: plain Docker or Kubernetes, stock Postgres images, and OverlayFS (the
+            same mechanism container images already use) applied to <code>PGDATA</code>. No special filesystem, no
             cloud, no patched Postgres. The whole-file copy-up granularity above is the price of that choice.
           </p>
         </section>
@@ -378,15 +378,15 @@ du -sh  /var/tmp/ovl/upper/big     # 100M</code></pre>
 
           <p>
             <strong>A benchmark that contradicts your design is the most valuable output it can produce.</strong> The
-            number that mattered wasn't 61.9 seconds, it was 5.05 GiB — because "slow" invites tuning and "the
-            writable layer is the size of the database" tells you the design isn't running. I nearly went looking for
-            I/O tuning knobs first.
+            number that mattered wasn't 61.9 seconds, it was 5.05 GiB. "Slow" invites tuning; "the writable layer is
+            the size of the database" tells you the design isn't running. I nearly went looking for I/O tuning knobs
+            first.
           </p>
 
           <p>
             <strong>Copy-on-write filesystems are triggered by intent, not by action.</strong> OverlayFS charges you a
             full file copy for <em>declaring</em> you might write. So on an overlay-backed path, <code>O_RDWR</code>
-            is not a cheap default — it's a commitment, and any code that opens files read-write "just to be safe" is
+            is not a cheap default; it's a commitment, and any code that opens files read-write "just to be safe" is
             buying the most expensive thing in the system.
           </p>
 

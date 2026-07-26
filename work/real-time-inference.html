@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>
-      The GPU was idle and we could serve two people — Abdul Basit Sajid
+      The GPU was idle and we could serve two people · Abdul Basit Sajid
     </title>
     <meta
       name="description"
@@ -39,8 +39,8 @@
         <h1>The GPU was idle and we could serve two people</h1>
         <p class="tagline">
           A real-time inference backend on a rented GPU, falling over at three
-          concurrent users — while the GPU it was rented for sat between 0 and
-          13% utilised. Everything I assumed about that was wrong, and the
+          concurrent users while the GPU it was rented for sat between 0 and 13%
+          utilised. Everything I assumed about that was wrong, and the
           measurement said so before I did.
         </p>
         <p class="meta">
@@ -59,7 +59,7 @@
             single-request inference itself was taking roughly 2.8 seconds.
           </p>
           <p>
-            The instinct in the room — mine included — was that a GPU workload
+            The instinct in the room, mine included, was that a GPU workload
             that cannot serve users needs a bigger GPU, or more of them. That
             instinct had a price tag attached, which is the only reason it was
             worth being careful about.
@@ -74,7 +74,7 @@
             explanation would produce a specific number if it were true.
           </p>
           <p>
-            Three of the hypotheses I went in with were falsified by it —
+            Three of the hypotheses I went in with were falsified by it,
             including the expensive one. I want to be precise about what that
             means: they were not merely unsupported, they predicted results the
             sweep did not produce, and I threw them out. The value of the
@@ -103,8 +103,8 @@
           <p>
             The service was Python, and the ceiling was the Global Interpreter
             Lock. The GPU work was genuinely fast and genuinely parallel; the
-            Python-level work wrapped around it — request handling, pre- and
-            post-processing, serialisation, the orchestration between them —
+            Python-level work wrapped around it (request handling, pre- and
+            post-processing, serialisation, the orchestration between them)
             could only ever run one thread at a time. So concurrency did not
             queue on the accelerator, it queued on the interpreter, and every
             additional user made the line longer while leaving the GPU exactly
@@ -119,7 +119,7 @@
           <p>
             A second, independent finding came out of the same instrumentation.
             The realtime transport was fanning every message out to every
-            connected client — a <code>broadcast=True</code> on a path that only
+            connected client: a <code>broadcast=True</code> on a path that only
             ever needed to reach one. That makes per-message cost scale with the
             number of people connected, which is the worst possible shape for a
             system whose entire goal is to hold more people. Removing it took
@@ -133,8 +133,8 @@
             <table>
               <caption>
                 Measured on the campaign configuration. Concurrency and delivery
-                rate come from load testing, not from production traffic — see
-                the caveat below, which matters.
+                rate come from load testing, not from production traffic. See
+                the caveat below; it matters.
               </caption>
               <thead>
                 <tr>
@@ -165,9 +165,9 @@
           <p>
             At 700 concurrent the system held <strong>99.4% delivery</strong> at
             <strong>$0.0106 per user-hour</strong>. The entire campaign cost
-            about <strong>$25</strong> to run — which turned the original
-            question from a capacity problem into a rounding error, without
-            buying a single additional GPU.
+            about <strong>$25</strong> to run. That turned the original question
+            from a capacity problem into a rounding error, without buying a
+            single additional GPU.
           </p>
         </section>
 
@@ -187,7 +187,7 @@
             </p>
           </div>
           <p>
-            The cost figure carries the same asterisk — $0.0106 per user-hour is
+            The cost figure carries the same asterisk: $0.0106 per user-hour is
             the campaign configuration at campaign scale, and it would not
             survive being quoted as a general unit economic for the platform.
           </p>

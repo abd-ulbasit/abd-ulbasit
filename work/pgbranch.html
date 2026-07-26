@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>
-      A copy-on-write system that copied everything — Abdul Basit Sajid
+      A copy-on-write system that copied everything · Abdul Basit Sajid
     </title>
     <meta
       name="description"
@@ -59,8 +59,8 @@
           </p>
           <p>
             So the number that mattered was not the 61.9 seconds. It was the
-            writable layer. After creating a branch of a 5.00 GiB database — no
-            queries run, no rows written, nothing but a boot — the branch's
+            writable layer. After creating a branch of a 5.00 GiB database (no
+            queries run, no rows written, nothing but a boot), the branch's
             writable layer held <strong>5.05 GiB</strong>. The 1 GiB dataset
             behaved the same way: 1.00 GiB of database, 1.05 GiB of writable
             layer. Whatever else was happening, the system had made a full
@@ -75,7 +75,7 @@
             pgbranch seeds with <code>pg_basebackup</code>, so a branch's first
             boot is a crash recovery: Postgres replays WAL to bring the data
             directory to a consistent state. That is a real, known cost, and it
-            was the obvious suspect — a slow, I/O-heavy recovery pass that
+            was the obvious suspect: a slow, I/O-heavy recovery pass that
             touches everything.
           </p>
           <p>
@@ -104,8 +104,8 @@
             <code>fsync</code> it.
           </p>
           <p>
-            On an ordinary filesystem that is cheap — an open, an fsync, a
-            close, mostly against already-clean files. On OverlayFS it is not,
+            On an ordinary filesystem that is cheap (an open, an fsync, a
+            close, mostly against already-clean files). On OverlayFS it is not,
             because of one rule: opening a file that lives in the read-only
             lower layer with <code>O_RDWR</code> forces a
             <strong>copy-up</strong>. Not of the pages you touch. Of the whole
@@ -130,7 +130,7 @@
           </p>
           <ul class="plain">
             <li>
-              <strong>The size is not approximately the database — it is the
+              <strong>The size is not approximately the database; it is the
                 database.</strong>
               5.05 GiB of writable layer against 5.00 GiB of data, and 1.05
               against 1.00. A partial or incidental copy does not land on the
@@ -165,7 +165,7 @@
             <code>syncfs()</code> flushes the entire filesystem containing the
             data directory in one call, without opening individual files. The
             durability argument is that this is a <em>superset</em> of what the
-            per-file pass covers — the property the pass exists to establish
+            per-file pass covers. The property the pass exists to establish
             still holds, so crash-recovery semantics are unchanged. What it
             costs is specificity: <code>syncfs</code> can surface I/O errors
             belonging to unrelated files on the same filesystem. In this design
@@ -214,8 +214,9 @@
           </div>
           <p>
             Roughly 33× faster to create, and the storage a branch costs at rest
-            drops by more than two orders of magnitude — which is the number
-            that decides whether you can afford a database per pull request.
+            drops by more than two orders of magnitude. That storage number is
+            the one that decides whether you can afford a database per pull
+            request.
           </p>
         </section>
 
@@ -237,8 +238,8 @@
               it replaced. The two are not measuring the same thing, and the
               honest framing is that pgbranch moved the cost from
               pay-at-creation to pay-per-file-written. For branches that read a
-              lot and write a little — which is what a pull-request database
-              does — that is strictly better. For a branch that rewrites its
+              lot and write a little, which is what a pull-request database
+              does, that is strictly better. For a branch that rewrites its
               entire dataset, it is a wash.
             </p>
           </div>
@@ -247,14 +248,14 @@
             safety argument for <code>syncfs</code> is an argument: it reasons
             from what the two sync methods guarantee, and it has not been
             demonstrated with fault injection. And nothing in CI would catch
-            this regression coming back — the fix is protected by a benchmark
+            this regression coming back. The fix is protected by a benchmark
             script that a human has to remember to run, which is exactly the
             kind of protection that fails silently a year later.
           </p>
           <p>
             The repository states outright how much of its commit history was
-            agent-assisted, and points at the two documents — the benchmark
-            record and the deep dives — that required diagnosis rather than
+            agent-assisted, and points at the two documents (the benchmark
+            record and the deep dives) that required diagnosis rather than
             generation. The benchmark file still contains the pre-fix numbers
             that contradicted the project's own thesis, including the one above
             that looks better before the fix than after it.

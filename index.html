@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Abdul Basit Sajid — backend &amp; infrastructure engineer</title>
+    <title>Abdul Basit Sajid · backend &amp; infrastructure engineer</title>
     <meta
       name="description"
       content="Backend and infrastructure engineer. Go, Postgres, Kubernetes. Took a real-time GPU inference backend from 3 to 700 concurrent users under load test, where the GPU was never the bottleneck."
@@ -12,11 +12,11 @@
     <meta property="og:url" content="https://basit.engineer/" />
     <meta
       property="og:title"
-      content="Abdul Basit Sajid — backend &amp; infrastructure engineer"
+      content="Abdul Basit Sajid · backend &amp; infrastructure engineer"
     />
     <meta
       property="og:description"
-      content="Go, Postgres, Kubernetes. 3 to 700 concurrent users under load test on a GPU inference backend — the GPU was never the bottleneck."
+      content="Go, Postgres, Kubernetes. 3 to 700 concurrent users under load test on a GPU inference backend. The GPU was never the bottleneck."
     />
     <meta name="twitter:card" content="summary" />
     <link rel="canonical" href="https://basit.engineer/" />
@@ -39,10 +39,10 @@
           <a href="https://www.eliteitteam.com/" rel="noopener">EliteITTeam</a>
           (Manchester, UK) from Pakistan. The work I would point at first is a
           real-time GPU inference backend I took from three concurrent users to
-          700 under load test — where the finding that mattered was that the GPU
-          had never been the bottleneck — and a capacity analysis where the
-          correct recommendation turned out to be that we not build the system
-          at all.
+          700 under load test, where the finding that mattered was that the GPU
+          had never been the bottleneck. The second is a capacity analysis where
+          the correct recommendation turned out to be that we not build the
+          system at all.
         </p>
 
         <section aria-labelledby="numbers">
@@ -56,7 +56,7 @@
               <p>
                 Real-time GPU inference backend, proved under load test at 99.4%
                 delivery and $0.0106 per user-hour. GPU utilisation sat at 0–13%
-                the whole time — the ceiling was the Python GIL.
+                the whole time. The ceiling was the Python GIL.
                 <a href="work/real-time-inference.html">How that was found →</a>
               </p>
             </li>
@@ -128,8 +128,8 @@
                 retraining when it drifts, as a closed loop. The engineering
                 problem is that eleven services spread across as many databases
                 have to agree on what happened without a distributed
-                transaction — including a cancelled workflow that still has to
-                durably record that it was cancelled, on a context that is
+                transaction. That includes a cancelled workflow that still has
+                to durably record that it was cancelled, on a context that is
                 already dead. Go on Kubernetes, gRPC and NATS JetStream.
               </p>
               <div class="links">
@@ -145,7 +145,7 @@
               <p>
                 Kubernetes operator. A 20-line Application CRD provisions
                 Postgres, Redis and RabbitMQ, injects the credentials, and
-                reports configuration drift — the hard part being to tell an
+                reports configuration drift. The hard part is telling an
                 external edit apart from expected change, which it does by
                 comparing spec generation against last-reconciled generation.
               </p>
@@ -161,8 +161,8 @@
                 Distributed message queue in Go: append-only log, leader
                 election with no ZooKeeper or etcd, and a hierarchical timing
                 wheel for O(1) delayed delivery. A cancel racing a bucket drain
-                silently orphaned every remaining timer in that bucket — no
-                panic, no failing test, no log line — for up to 7.76 days.
+                silently orphaned every remaining timer in that bucket for up to
+                7.76 days. No panic, no failing test, no log line.
               </p>
               <div class="links">
                 <a href="https://github.com/abd-ulbasit/goqueue" rel="noopener"
@@ -175,8 +175,8 @@
               <p>
                 L4/L7 proxy and load balancer with no dependencies in the
                 request path. Its circuit breaker's half-open state admitted
-                every caller — 64 of 64 when 64 goroutines were released at
-                once — so it was a label rather than admission control. 8,000
+                every caller (64 of 64 when 64 goroutines were released at
+                once), so it was a label rather than admission control. 8,000
                 concurrent proxied connections measured; the ceiling was my test
                 topology, not the proxy.
               </p>
@@ -243,9 +243,9 @@
               ><span class="tag">EliteITTeam</span>
               <p>
                 Root-caused a Stripe webhook failure and wrote the repair for
-                the records it had corrupted — run dry-first, checksummed
-                before and after, with a written rollback. Also took a
-                reporting endpoint from 2.5 s to 650 ms along the way.
+                the records it had corrupted: run dry-first, checksummed before
+                and after, with a written rollback. Also took a reporting
+                endpoint from 2.5 s to 650 ms along the way.
               </p>
             </li>
           </ul>
@@ -262,8 +262,8 @@
                 A copy-on-write branching benchmark that reported a full copy.
                 OverlayFS copies a file up when it is opened read-write, and
                 Postgres opens every file in the data directory read-write to
-                fsync it before WAL replay — so the durability pass copied the
-                whole dataset before a single query ran. Includes the
+                fsync it before WAL replay. The durability pass therefore copied
+                the whole dataset before a single query ran. Includes the
                 measurement that exposed it and the limitation the fix does not
                 remove.
               </p>
