@@ -263,6 +263,31 @@
             </li>
           </ul>
         </section>
+
+        <section aria-labelledby="writing">
+          <h2 id="writing">Writing</h2>
+          <ul class="rows">
+            <li>
+              <span class="name"
+                >Postgres copied 5 GiB before recovery started</span
+              >
+              <p>
+                A copy-on-write branching benchmark that reported a full copy.
+                OverlayFS copies a file up when it is opened read-write, and
+                Postgres opens every file in the data directory read-write to
+                fsync it before WAL replay — so the durability pass copied the
+                whole dataset before a single query ran. Includes the
+                measurement that exposed it and the limitation the fix does not
+                remove.
+              </p>
+              <div class="links">
+                <a href="posts/postgres-copied-5gb-before-recovery-started.html"
+                  >Read</a
+                >
+              </div>
+            </li>
+          </ul>
+        </section>
       </main>
 
       <footer>
