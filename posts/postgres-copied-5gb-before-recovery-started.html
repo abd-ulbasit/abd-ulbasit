@@ -166,7 +166,7 @@
             recovery itself did nothing:
           </p>
 
-          <pre><code>redo done at 0/6000060 system usage: ... elapsed: 0.00 s</code></pre>
+          <pre><code>redo done ... elapsed: 0.00 s</code></pre>
 
           <p>
             Zero seconds of redo, after sixty seconds of <em>something</em>. Whatever was eating the time happened
@@ -219,8 +219,9 @@ CloseTransientFile(fd);</code></pre>
           </p>
 
           <p>
-            If you want to see it with Postgres out of the way, this is the whole thing in eight lines. Run it as
-            root, with the scratch directory on ext4 or xfs — tmpfs isn't a valid <code>upperdir</code>:
+            If you want to see it with Postgres out of the way, here is the whole mechanism with nothing else in the
+            frame. Run it as root, with the scratch directory on ext4 or xfs — tmpfs isn't accepted as an
+            <code>upperdir</code>:
           </p>
 
           <pre><code>mkdir -p /var/tmp/ovl/{lower,upper,work,merged}
@@ -229,12 +230,13 @@ mount -t overlay overlay \
   -o lowerdir=/var/tmp/ovl/lower,upperdir=/var/tmp/ovl/upper,workdir=/var/tmp/ovl/work \
   /var/tmp/ovl/merged
 
-du -sh /var/tmp/ovl/upper    # 0 — nothing has been touched yet
+find /var/tmp/ovl/upper -type f    # nothing — the upper layer is empty
 
 # open read-write, write nothing, close
 python3 -c 'import os; os.close(os.open("/var/tmp/ovl/merged/big", os.O_RDWR))'
 
-du -sh /var/tmp/ovl/upper    # 100M</code></pre>
+find /var/tmp/ovl/upper -type f    # /var/tmp/ovl/upper/big
+du -sh  /var/tmp/ovl/upper/big     # 100M</code></pre>
 
           <p>
             Now put the two halves together. Postgres opens every file in <code>PGDATA</code> read-write to fsync it.

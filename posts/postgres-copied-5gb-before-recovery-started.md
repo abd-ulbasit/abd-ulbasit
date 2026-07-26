@@ -68,7 +68,7 @@ The kernel's overlayfs documentation puts it plainly: when a file in the lower l
 
 Read that as an implementation detail, because it is one: **the copy-up is triggered by the open, not by the write.** A process that opens a lower-layer file `O_RDWR`, writes not a single byte, and immediately closes it has still copied the entire file into the upper layer. The kernel cannot know at open time that you weren't going to write, so it materializes the file first and asks questions never.
 
-If you want to see it with Postgres out of the way, this is the whole thing in eight lines. Run it as root, with the scratch directory on ext4 or xfs — tmpfs isn't a valid `upperdir`:
+If you want to see it with Postgres out of the way, here is the whole mechanism with nothing else in the frame. Run it as root, with the scratch directory on ext4 or xfs — tmpfs isn't accepted as an `upperdir`:
 
 ```sh
 mkdir -p /var/tmp/ovl/{lower,upper,work,merged}
