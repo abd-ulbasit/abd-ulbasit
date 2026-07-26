@@ -57,7 +57,7 @@
                 Real-time GPU inference backend, proved under load test at 99.4%
                 delivery and $0.0106 per user-hour. GPU utilisation sat at 0–13%
                 the whole time — the ceiling was the Python GIL.
-                <a href="work/orb-vision.html">How that was found →</a>
+                <a href="work/real-time-inference.html">How that was found →</a>
               </p>
             </li>
             <li>
@@ -88,11 +88,6 @@
 
         <section aria-labelledby="oss">
           <h2 id="oss">Open source</h2>
-          <p class="lede" style="margin-bottom: 1.6rem">
-            Worth stating plainly: every Kubernetes system below is a personal
-            project. Production at work is PM2 and Docker on single VMs. I have
-            operated that, not a cluster.
-          </p>
           <ul class="rows">
             <li>
               <span class="name">pgbranch</span>
@@ -129,11 +124,13 @@
             <li>
               <span class="name">forgepoint</span>
               <p>
-                ML-lifecycle platform: 11 Go microservices on Kubernetes over
-                gRPC and NATS JetStream, implementing saga compensation, event
-                sourcing, CQRS and a transactional outbox — including a
-                cancelled saga that still has to durably record that it was
-                cancelled, on a context that is already dead.
+                Takes a model from training through serving and back to
+                retraining when it drifts, as a closed loop. The engineering
+                problem is that eleven services spread across as many databases
+                have to agree on what happened without a distributed
+                transaction — including a cancelled workflow that still has to
+                durably record that it was cancelled, on a context that is
+                already dead. Go on Kubernetes, gRPC and NATS JetStream.
               </p>
               <div class="links">
                 <a
@@ -231,7 +228,7 @@
               </p>
             </li>
             <li>
-              <span class="name">ORB Vision — real-time inference backend</span
+              <span class="name">Real-time inference backend</span
               ><span class="tag">EliteITTeam</span>
               <p>
                 3 → 700 concurrent users under load test; 2,800 ms → 60 ms
@@ -240,25 +237,17 @@
                 along the way.
               </p>
               <div class="links">
-                <a href="work/orb-vision.html">case study</a>
+                <a href="work/real-time-inference.html">case study</a>
               </div>
             </li>
             <li>
-              <span class="name">Reporting endpoint, tenant analytics</span
+              <span class="name">Payments incident and data repair</span
               ><span class="tag">EliteITTeam</span>
               <p>
-                2.5 s → 650 ms, by collapsing six sequential MongoDB queries
-                into one <code>$facet</code> aggregation.
-              </p>
-            </li>
-            <li>
-              <span class="name">Edtech platform, backend</span
-              ><span class="tag">EliteITTeam</span>
-              <p>
-                107 of 165 commits mine. Production migrations — SMTP
-                cutover, staging rename, backups — plus a Stripe webhook
-                root-cause and the production data repair that followed it, run
-                dry-first with checksums and a written rollback.
+                Root-caused a Stripe webhook failure and wrote the repair for
+                the records it had corrupted — run dry-first, checksummed
+                before and after, with a written rollback. Also took a
+                reporting endpoint from 2.5 s to 650 ms along the way.
               </p>
             </li>
           </ul>
