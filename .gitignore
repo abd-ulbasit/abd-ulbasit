@@ -1,2 +1,5 @@
 .playwright-mcp/
 __pycache__/
+
+# Working notes, not web content. Kept on disk; the site root is public.
+posts/DISTRIBUTION.md
