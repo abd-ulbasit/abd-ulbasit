@@ -88,7 +88,7 @@ du -sh  /var/tmp/ovl/upper/big     # 100M
 
 Now put the two halves together. Postgres opens every file in `PGDATA` read-write to fsync it. OverlayFS copies up every file that is opened read-write. So the durability pass that runs *before* recovery copied the entire dataset into the branch's supposedly-empty writable layer, before the branch served a single query — in preparation for a WAL replay that then took 0.00 seconds.
 
-The mechanism isn't specific to Postgres. Anything that fsyncs a directory tree at startup, or chowns it, or opens files read-write to check them, will do this on any overlay-backed filesystem. That's every container image layer in the world.
+The mechanism isn't specific to Postgres. Anything that fsyncs a directory tree at startup or opens files read-write to check them, will do this on any overlay-backed filesystem. That's every container image layer in the world.
 
 ## Confirming it, and the fix
 

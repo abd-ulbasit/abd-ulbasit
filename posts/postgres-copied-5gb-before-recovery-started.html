@@ -246,7 +246,7 @@ du -sh  /var/tmp/ovl/upper/big     # 100M</code></pre>
           </p>
 
           <p>
-            The mechanism isn't specific to Postgres. Anything that fsyncs a directory tree at startup, or chowns it,
+            The mechanism isn't specific to Postgres. Anything that fsyncs a directory tree at startup
             or opens files read-write to check them, will do this on any overlay-backed filesystem. That's every
             container image layer in the world.
           </p>
