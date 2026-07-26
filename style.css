@@ -1,0 +1,463 @@
+/* basit.engineer — shared stylesheet for index.html and work/*.html */
+
+:root {
+  --bg: #fcfbf9;
+  --surface: #f4f1ec;
+  --ink: #1a1a18;
+  --ink-2: #4a4843;
+  --ink-3: #6d6961;
+  --rule: #e2ddd4;
+  --rule-strong: #cfc8bc;
+  --accent: #92451c;
+  --accent-quiet: #f0e6dd;
+  --good: #2f5d3a;
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue",
+    Helvetica, Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
+    "Liberation Mono", monospace;
+  --measure: 68ch;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #121213;
+    --surface: #1a1a1c;
+    --ink: #ecebe7;
+    --ink-2: #b8b4ac;
+    --ink-3: #8c887f;
+    --rule: #2b2b2e;
+    --rule-strong: #3d3d41;
+    --accent: #dc8f5f;
+    --accent-quiet: #2a211b;
+    --good: #7fb98c;
+  }
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  padding: 0 1.5rem;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: 17px;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+.wrap {
+  max-width: 47rem;
+  margin: 0 auto;
+  padding: 4.5rem 0 5rem;
+}
+
+/* ---------- links ---------- */
+
+a {
+  color: var(--accent);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.18em;
+  text-decoration-color: color-mix(in srgb, var(--accent) 40%, transparent);
+  transition: text-decoration-color 0.15s ease, color 0.15s ease;
+}
+
+a:hover {
+  text-decoration-color: var(--accent);
+}
+
+a:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+.skip {
+  position: absolute;
+  left: -9999px;
+}
+
+.skip:focus {
+  left: 1rem;
+  top: 1rem;
+  z-index: 10;
+  padding: 0.5rem 0.9rem;
+  background: var(--surface);
+  border: 1px solid var(--rule-strong);
+  border-radius: 3px;
+}
+
+/* ---------- typography ---------- */
+
+h1 {
+  font-size: 1.9rem;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  margin: 0 0 0.35rem;
+  text-wrap: balance;
+}
+
+h2 {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  margin: 0 0 1.25rem;
+  padding-bottom: 0.6rem;
+  border-bottom: 1px solid var(--rule);
+}
+
+h3 {
+  font-size: 1.12rem;
+  line-height: 1.35;
+  letter-spacing: -0.01em;
+  margin: 2.4rem 0 0.7rem;
+  text-wrap: balance;
+}
+
+p {
+  margin: 0 0 1.15rem;
+  max-width: var(--measure);
+}
+
+.lede {
+  font-size: 1.06rem;
+  color: var(--ink-2);
+}
+
+.tagline {
+  font-size: 1.06rem;
+  color: var(--ink-2);
+  margin: 0 0 2rem;
+  max-width: var(--measure);
+}
+
+.meta {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--ink-3);
+  letter-spacing: 0.01em;
+}
+
+section {
+  margin: 3.5rem 0 0;
+}
+
+strong {
+  font-weight: 650;
+  color: var(--ink);
+}
+
+code,
+.mono {
+  font-family: var(--font-mono);
+  font-size: 0.88em;
+  font-variant-numeric: tabular-nums;
+}
+
+code {
+  background: var(--surface);
+  padding: 0.1em 0.35em;
+  border-radius: 3px;
+  border: 1px solid var(--rule);
+  overflow-wrap: break-word;
+}
+
+/* ---------- metric rows (the three numbers) ---------- */
+
+.metrics {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--rule);
+}
+
+.metrics li {
+  padding: 1.05rem 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.figure {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 1.16rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  display: block;
+  margin-bottom: 0.25rem;
+}
+
+.figure .from {
+  color: var(--ink-3);
+  font-weight: 400;
+}
+
+.figure .arrow {
+  color: var(--accent);
+  padding: 0 0.4em;
+  font-weight: 400;
+}
+
+.metrics p {
+  margin: 0;
+  font-size: 0.95rem;
+  color: var(--ink-2);
+}
+
+/* ---------- project / work rows ---------- */
+
+.rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.rows > li {
+  padding: 1.15rem 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.rows > li:first-child {
+  border-top: 1px solid var(--rule);
+}
+
+.name {
+  font-family: var(--font-mono);
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+}
+
+.rows p {
+  margin: 0.3rem 0 0;
+  font-size: 0.95rem;
+  color: var(--ink-2);
+  max-width: var(--measure);
+}
+
+.tag {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  border: 1px solid var(--rule-strong);
+  border-radius: 2px;
+  padding: 0.1rem 0.38rem;
+  margin-left: 0.5rem;
+  vertical-align: 0.12em;
+  white-space: nowrap;
+}
+
+.links {
+  margin-top: 0.45rem;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 1rem;
+}
+
+/* ---------- callout: the tradeoff / the caveat ---------- */
+
+.note {
+  border-left: 2px solid var(--accent);
+  background: var(--accent-quiet);
+  padding: 0.9rem 1.1rem;
+  margin: 1.6rem 0;
+  border-radius: 0 3px 3px 0;
+}
+
+.note p {
+  margin: 0;
+  font-size: 0.95rem;
+  color: var(--ink-2);
+}
+
+.note p + p {
+  margin-top: 0.7rem;
+}
+
+/* ---------- tables ---------- */
+
+.scroll {
+  overflow-x: auto;
+  margin: 1.4rem 0;
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.82rem;
+  white-space: nowrap;
+}
+
+caption {
+  caption-side: bottom;
+  text-align: left;
+  font-size: 0.82rem;
+  font-family: var(--font-sans);
+  color: var(--ink-3);
+  padding: 0.7rem 0.9rem;
+  border-top: 1px solid var(--rule);
+  white-space: normal;
+}
+
+th,
+td {
+  text-align: left;
+  padding: 0.55rem 0.9rem;
+  border-bottom: 1px solid var(--rule);
+}
+
+thead th {
+  font-weight: 600;
+  color: var(--ink-3);
+  font-size: 0.72rem;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  background: var(--surface);
+}
+
+tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+td.num {
+  text-align: right;
+}
+
+/* ---------- case-study page furniture ---------- */
+
+.back {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  display: inline-block;
+  margin-bottom: 2.2rem;
+}
+
+.step {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 0.45rem;
+}
+
+.case section {
+  margin-top: 3.2rem;
+}
+
+.case section > h2 {
+  font-family: var(--font-sans);
+  font-size: 1.3rem;
+  font-weight: 650;
+  letter-spacing: -0.015em;
+  text-transform: none;
+  color: var(--ink);
+  border-bottom: 0;
+  padding-bottom: 0;
+  margin: 0 0 0.9rem;
+  text-wrap: balance;
+}
+
+ul.plain {
+  padding-left: 1.15rem;
+  margin: 0 0 1.15rem;
+  max-width: var(--measure);
+}
+
+ul.plain li {
+  margin-bottom: 0.5rem;
+}
+
+/* ---------- footer ---------- */
+
+footer {
+  margin-top: 4.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--rule);
+}
+
+.contact {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1.4rem;
+  margin: 0 0 1rem;
+  padding: 0;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+}
+
+/* ---------- responsive ---------- */
+
+@media (max-width: 34rem) {
+  body {
+    font-size: 16px;
+    padding: 0 1.15rem;
+  }
+
+  .wrap {
+    padding: 2.75rem 0 3.5rem;
+  }
+
+  h1 {
+    font-size: 1.6rem;
+  }
+
+  .figure {
+    font-size: 1.05rem;
+  }
+
+  .tag {
+    margin-left: 0;
+    display: inline-block;
+    margin-top: 0.3rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+@media print {
+  body {
+    background: #fff;
+    color: #000;
+    font-size: 11pt;
+  }
+
+  a {
+    color: #000;
+  }
+
+  .skip,
+  .back {
+    display: none;
+  }
+}

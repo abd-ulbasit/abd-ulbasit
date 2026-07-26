@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>
+      The GPU was idle and we could serve two people — Abdul Basit Sajid
+    </title>
+    <meta
+      name="description"
+      content="A real-time GPU inference backend that fell over at three concurrent users while the GPU sat at 0–13% utilisation. The ceiling was the Python GIL. Proved to 700 concurrent under load test at 99.4% delivery."
+    />
+    <meta property="og:type" content="article" />
+    <meta
+      property="og:url"
+      content="https://basit.engineer/work/orb-vision.html"
+    />
+    <meta
+      property="og:title"
+      content="The GPU was idle and we could serve two people"
+    />
+    <meta
+      property="og:description"
+      content="0–13% GPU utilisation, a hard ceiling at three concurrent users, and three of my own hypotheses falsified before the real one survived."
+    />
+    <link
+      rel="canonical"
+      href="https://basit.engineer/work/orb-vision.html"
+    />
+    <link rel="stylesheet" href="../style.css" />
+  </head>
+  <body>
+    <a class="skip" href="#main">Skip to content</a>
+    <div class="wrap case">
+      <a class="back" href="../index.html">← Abdul Basit Sajid</a>
+
+      <header>
+        <span class="step">ORB Vision · EliteITTeam · case study</span>
+        <h1>The GPU was idle and we could serve two people</h1>
+        <p class="tagline">
+          A real-time inference backend on a rented GPU, falling over at three
+          concurrent users — while the GPU it was rented for sat between 0 and
+          13% utilised. Everything I assumed about that was wrong, and the
+          measurement said so before I did.
+        </p>
+        <p class="meta">
+          Python · real-time inference · GPU · load testing · closed source
+        </p>
+      </header>
+
+      <main id="main">
+        <section>
+          <h2>The problem</h2>
+          <p>
+            A marketing campaign needed a real-time inference service to hold up
+            in front of a live audience. What we had held up in front of about
+            three people. Beyond that, p50 latency climbed until the experience
+            stopped being real-time in any sense a user would recognise, and
+            single-request inference itself was taking roughly 2.8 seconds.
+          </p>
+          <p>
+            The instinct in the room — mine included — was that a GPU workload
+            that cannot serve users needs a bigger GPU, or more of them. That
+            instinct had a price tag attached, which is the only reason it was
+            worth being careful about.
+          </p>
+        </section>
+
+        <section>
+          <h2>Three explanations that did not survive</h2>
+          <p>
+            Rather than argue about it, I built a sweep: seven configurations,
+            one variable moved at a time, each one designed so that a specific
+            explanation would produce a specific number if it were true.
+          </p>
+          <p>
+            Three of the hypotheses I went in with were falsified by it —
+            including the expensive one. I want to be precise about what that
+            means: they were not merely unsupported, they predicted results the
+            sweep did not produce, and I threw them out. The value of the
+            exercise was almost entirely in what it killed.
+          </p>
+          <p>
+            What survived was an observation the sweep kept reproducing and I
+            kept trying to explain away:
+          </p>
+          <div class="note">
+            <p>
+              While p50 latency was climbing to the point of collapse, GPU
+              utilisation was sitting between <strong>0% and 13%</strong>.
+            </p>
+            <p>
+              A saturated GPU is what a GPU bottleneck looks like. An idle one
+              is what a GPU bottleneck cannot look like. Whatever the ceiling
+              was, we would not have moved it by buying more of the resource
+              that was already doing nothing.
+            </p>
+          </div>
+        </section>
+
+        <section>
+          <h2>The diagnosis</h2>
+          <p>
+            The service was Python, and the ceiling was the Global Interpreter
+            Lock. The GPU work was genuinely fast and genuinely parallel; the
+            Python-level work wrapped around it — request handling, pre- and
+            post-processing, serialisation, the orchestration between them —
+            could only ever run one thread at a time. So concurrency did not
+            queue on the accelerator, it queued on the interpreter, and every
+            additional user made the line longer while leaving the GPU exactly
+            as idle as it had been.
+          </p>
+          <p>
+            This is why the utilisation figure was the whole diagnosis and not a
+            supporting detail. It is the single number that distinguishes "we
+            need more compute" from "we cannot reach the compute we already
+            have", and those two readings point at opposite budgets.
+          </p>
+          <p>
+            A second, independent finding came out of the same instrumentation.
+            The realtime transport was fanning every message out to every
+            connected client — a <code>broadcast=True</code> on a path that only
+            ever needed to reach one. That makes per-message cost scale with the
+            number of people connected, which is the worst possible shape for a
+            system whose entire goal is to hold more people. Removing it took
+            p50 from <strong>871 ms to 59 ms</strong> on its own.
+          </p>
+        </section>
+
+        <section>
+          <h2>What it moved</h2>
+          <div class="scroll">
+            <table>
+              <caption>
+                Measured on the campaign configuration. Concurrency and delivery
+                rate come from load testing, not from production traffic — see
+                the caveat below, which matters.
+              </caption>
+              <thead>
+                <tr>
+                  <th scope="col"></th>
+                  <th scope="col" class="num">Before</th>
+                  <th scope="col" class="num">After</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <th scope="row">Concurrent users (load test)</th>
+                  <td class="num">3</td>
+                  <td class="num">700</td>
+                </tr>
+                <tr>
+                  <th scope="row">Inference</th>
+                  <td class="num">2,800 ms</td>
+                  <td class="num">60 ms</td>
+                </tr>
+                <tr>
+                  <th scope="row">p50, realtime path</th>
+                  <td class="num">871 ms</td>
+                  <td class="num">59 ms</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            At 700 concurrent the system held <strong>99.4% delivery</strong> at
+            <strong>$0.0106 per user-hour</strong>. The entire campaign cost
+            about <strong>$25</strong> to run — which turned the original
+            question from a capacity problem into a rounding error, without
+            buying a single additional GPU.
+          </p>
+        </section>
+
+        <section>
+          <h2>What I will not claim about this</h2>
+          <div class="note">
+            <p>
+              <strong>700 is proved capacity, not served load.</strong> It is a
+              load-test figure. Actual production peak on this system was 147
+              concurrent users. I am confident about the ceiling because the
+              test was built to find it, but a load generator is not an
+              audience: it has no think time, no unusual clients, no
+              pathological network, and none of the ways real traffic is
+              creative. The honest statement is that we proved headroom of
+              roughly 4.7× over what we ever actually saw, and then never needed
+              it.
+            </p>
+          </div>
+          <p>
+            The cost figure carries the same asterisk — $0.0106 per user-hour is
+            the campaign configuration at campaign scale, and it would not
+            survive being quoted as a general unit economic for the platform.
+          </p>
+          <p>
+            And the thing I would keep from this over any of the numbers: the
+            first three explanations were mine, they were confident, and one of
+            them would have been expensive. What separated the right answer from
+            the wrong ones was not insight, it was that the sweep was designed
+            so a wrong hypothesis would visibly fail rather than quietly go
+            unchallenged. GPU utilisation was on the dashboard the entire time.
+            It just took building the experiment to make me believe it.
+          </p>
+        </section>
+      </main>
+
+      <footer>
+        <ul class="contact">
+          <li><a href="../index.html">Home</a></li>
+          <li><a href="pgbranch.html">pgbranch case study</a></li>
+          <li>
+            <a href="https://github.com/abd-ulbasit" rel="noopener">GitHub</a>
+          </li>
+          <li><a href="mailto:basit@basit.engineer">basit@basit.engineer</a></li>
+        </ul>
+      </footer>
+    </div>
+  </body>
+</html>

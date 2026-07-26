@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>
+      A copy-on-write system that copied everything — Abdul Basit Sajid
+    </title>
+    <meta
+      name="description"
+      content="Branching a 5 GiB Postgres database took 61.9 s and left a 5.05 GiB writable layer. The cause was Postgres opening every file read-write before WAL replay, and OverlayFS answering that with a full copy-up."
+    />
+    <meta property="og:type" content="article" />
+    <meta property="og:url" content="https://basit.engineer/work/pgbranch.html" />
+    <meta
+      property="og:title"
+      content="A copy-on-write system that copied everything"
+    />
+    <meta
+      property="og:description"
+      content="61.9 s and a 5.05 GiB writable layer to branch a 5 GiB database. The diagnosis: SyncDataDirectory opens every file O_RDWR, and on OverlayFS that forces a full copy-up."
+    />
+    <link
+      rel="canonical"
+      href="https://basit.engineer/work/pgbranch.html"
+    />
+    <link rel="stylesheet" href="../style.css" />
+  </head>
+  <body>
+    <a class="skip" href="#main">Skip to content</a>
+    <div class="wrap case">
+      <a class="back" href="../index.html">← Abdul Basit Sajid</a>
+
+      <header>
+        <span class="step">pgbranch · case study</span>
+        <h1>A copy-on-write system that copied everything</h1>
+        <p class="tagline">
+          The first honest benchmark said branching a 5 GiB database took 61.9
+          seconds and left a 5.05 GiB writable layer behind. That is not a slow
+          path. That is the feature not working.
+        </p>
+        <p class="meta">
+          Go · Postgres · OverlayFS ·
+          <a href="https://github.com/abd-ulbasit/pgbranch" rel="noopener"
+            >github.com/abd-ulbasit/pgbranch</a
+          >
+        </p>
+      </header>
+
+      <main id="main">
+        <section>
+          <h2>The problem</h2>
+          <p>
+            pgbranch gives you a Postgres database per pull request. You seed
+            one dataset once, and every branch after that is supposed to be a
+            copy-on-write view of it: instant to create, cheap to keep, thrown
+            away without ceremony. The entire value proposition is the copying
+            that does not happen.
+          </p>
+          <p>
+            So the number that mattered was not the 61.9 seconds. It was the
+            writable layer. After creating a branch of a 5.00 GiB database — no
+            queries run, no rows written, nothing but a boot — the branch's
+            writable layer held <strong>5.05 GiB</strong>. The 1 GiB dataset
+            behaved the same way: 1.00 GiB of database, 1.05 GiB of writable
+            layer. Whatever else was happening, the system had made a full
+            physical copy of the data on a code path whose whole purpose is not
+            to.
+          </p>
+        </section>
+
+        <section>
+          <h2>The explanation I expected, and why it was wrong</h2>
+          <p>
+            pgbranch seeds with <code>pg_basebackup</code>, so a branch's first
+            boot is a crash recovery: Postgres replays WAL to bring the data
+            directory to a consistent state. That is a real, known cost, and it
+            was the obvious suspect — a slow, I/O-heavy recovery pass that
+            touches everything.
+          </p>
+          <p>
+            The Postgres log refused to support it. The recovery it was blamed
+            on reported:
+          </p>
+          <p><code>redo done ... elapsed: 0.00 s</code></p>
+          <p>
+            Zero. The replay was not slow; the replay was nothing. Whatever was
+            burning a minute and materialising five gigabytes happened
+            <em>before</em> the work I had assumed was responsible, and I had
+            been reading the wrong side of the log.
+          </p>
+        </section>
+
+        <section>
+          <h2>The diagnosis</h2>
+          <p>
+            Before replaying any WAL, Postgres runs a pass called
+            <code>SyncDataDirectory</code>. Its job is to guarantee that nothing
+            left over from before the crash is sitting dirty in the page cache
+            unflushed. Under the default
+            <code>recovery_init_sync_method=fsync</code>, it does that the
+            literal way: it walks the entire data directory and opens
+            <em>every single file</em> read-write in order to
+            <code>fsync</code> it.
+          </p>
+          <p>
+            On an ordinary filesystem that is cheap — an open, an fsync, a
+            close, mostly against already-clean files. On OverlayFS it is not,
+            because of one rule: opening a file that lives in the read-only
+            lower layer with <code>O_RDWR</code> forces a
+            <strong>copy-up</strong>. Not of the pages you touch. Of the whole
+            file, immediately, on open, before you have written a byte.
+          </p>
+          <p>
+            Those two behaviours compose into the exact opposite of the
+            product. The sync pass opens every file in the dataset read-write;
+            OverlayFS faithfully copies each one into the branch's writable
+            layer; and by the time Postgres is ready to accept its first
+            connection it has duplicated the entire database in the name of
+            preparing for a WAL replay that had nothing to replay.
+          </p>
+        </section>
+
+        <section>
+          <h2>Proving it rather than believing it</h2>
+          <p>
+            That story is plausible, which is the problem with it. Two
+            measurements were cheap enough that there was no excuse for
+            shipping the explanation without them.
+          </p>
+          <ul class="plain">
+            <li>
+              <strong>The size is not approximately the database — it is the
+                database.</strong>
+              5.05 GiB of writable layer against 5.00 GiB of data, and 1.05
+              against 1.00. A partial or incidental copy does not land on the
+              dataset size twice at two different scales. A full copy-up of
+              every file does.
+            </li>
+            <li>
+              <strong>A single-variable control run.</strong> Same image, same
+              dataset, same command, one flag changed:
+              <code>recovery_init_sync_method=syncfs</code>. The branch came up
+              with <strong>16 KiB</strong> in its writable layer. If the
+              mechanism were anything other than the sync method's file-open
+              behaviour, changing only the sync method could not have moved the
+              number by five orders of magnitude.
+            </li>
+          </ul>
+        </section>
+
+        <section>
+          <h2>The fix</h2>
+          <p>
+            One flag, in the container entrypoint that starts a branch's
+            Postgres:
+          </p>
+          <p>
+            <code
+              >exec docker-entrypoint.sh postgres -c
+              recovery_init_sync_method=syncfs</code
+            >
+          </p>
+          <p>
+            <code>syncfs()</code> flushes the entire filesystem containing the
+            data directory in one call, without opening individual files. The
+            durability argument is that this is a <em>superset</em> of what the
+            per-file pass covers — the property the pass exists to establish
+            still holds, so crash-recovery semantics are unchanged. What it
+            costs is specificity: <code>syncfs</code> can surface I/O errors
+            belonging to unrelated files on the same filesystem. In this design
+            a branch's filesystem is its own disposable overlay mount holding
+            nothing else, so that class of noise has nothing to be noisy about.
+          </p>
+          <p>
+            It is not free. <code>syncfs</code> as a recovery init method is
+            Linux-only and Postgres 14 or newer, which puts a hard floor under
+            the project. Postgres 13 is therefore rejected when you register a
+            source, loudly, rather than silently accepting it and quietly
+            performing badly.
+          </p>
+        </section>
+
+        <section>
+          <h2>What changed, and how it was measured</h2>
+          <div class="scroll">
+            <table>
+              <caption>
+                p50 of five runs per configuration on identical hardware, one
+                variable changed between the two rows. All five raw runs for
+                both tables are published in the repository rather than
+                summarised away.
+              </caption>
+              <thead>
+                <tr>
+                  <th scope="col">5 GiB database</th>
+                  <th scope="col" class="num">Create</th>
+                  <th scope="col" class="num">Writable layer</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <th scope="row">Before (fsync, the default)</th>
+                  <td class="num">61.9 s</td>
+                  <td class="num">5.05 GiB</td>
+                </tr>
+                <tr>
+                  <th scope="row">After (syncfs)</th>
+                  <td class="num">1.89 s</td>
+                  <td class="num">33.1 MiB</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            Roughly 33× faster to create, and the storage a branch costs at rest
+            drops by more than two orders of magnitude — which is the number
+            that decides whether you can afford a database per pull request.
+          </p>
+        </section>
+
+        <section>
+          <h2>What is still wrong with this</h2>
+          <div class="note">
+            <p>
+              <strong>The cost moved. It did not disappear.</strong> OverlayFS
+              copies up whole files, and Postgres heap and index segments run to
+              1 GiB each. Before the fix, creation had already materialised
+              every file, so a later write only paid for the pages it dirtied: a
+              1% <code>UPDATE</code> grew the layer by about 179 MiB on the 5
+              GiB dataset. After the fix the layer starts at 33 MiB, so that
+              same <code>UPDATE</code> plus a checkpoint pays first-write
+              copy-up across every segment it touches and lands at 5.20 GiB.
+            </p>
+            <p>
+              That number is worse and it is published anyway, next to the one
+              it replaced. The two are not measuring the same thing, and the
+              honest framing is that pgbranch moved the cost from
+              pay-at-creation to pay-per-file-written. For branches that read a
+              lot and write a little — which is what a pull-request database
+              does — that is strictly better. For a branch that rewrites its
+              entire dataset, it is a wash.
+            </p>
+          </div>
+          <p>
+            Two other things I would rather say than have someone find. The
+            safety argument for <code>syncfs</code> is an argument: it reasons
+            from what the two sync methods guarantee, and it has not been
+            demonstrated with fault injection. And nothing in CI would catch
+            this regression coming back — the fix is protected by a benchmark
+            script that a human has to remember to run, which is exactly the
+            kind of protection that fails silently a year later.
+          </p>
+          <p>
+            The repository states outright how much of its commit history was
+            agent-assisted, and points at the two documents — the benchmark
+            record and the deep dives — that required diagnosis rather than
+            generation. The benchmark file still contains the pre-fix numbers
+            that contradicted the project's own thesis, including the one above
+            that looks better before the fix than after it.
+          </p>
+        </section>
+      </main>
+
+      <footer>
+        <ul class="contact">
+          <li><a href="../index.html">Home</a></li>
+          <li>
+            <a href="https://github.com/abd-ulbasit/pgbranch" rel="noopener"
+              >Repository</a
+            >
+          </li>
+          <li><a href="orb-vision.html">ORB Vision case study</a></li>
+          <li><a href="mailto:basit@basit.engineer">basit@basit.engineer</a></li>
+        </ul>
+      </footer>
+    </div>
+  </body>
+</html>

@@ -3,58 +3,285 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Abdul Basit</title>
-    <style>
-      body {
-        margin: 0;
-        padding: 0;
-        font-family: 'Georgia', 'Times New Roman', serif;
-        height: 100vh;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        background-color: #f5f5f5;
-      }
-
-      .centered-content {
-        text-align: center;
-        max-width: 600px;
-        padding: 20px;
-      }
-
-      .centered-content h1 {
-        font-size: 2.5em;
-        margin-bottom: 20px;
-        color: #333;
-      }
-
-      .centered-content p {
-        font-size: 1.2em;
-        line-height: 1.6;
-        color: #666;
-        margin-bottom: 30px;
-      }
-
-      .resume-link {
-        font-size: 0.95em;
-        color: #555;
-        text-decoration: none;
-        border-bottom: 1px solid #999;
-        padding-bottom: 2px;
-        transition: color 0.2s, border-color 0.2s;
-      }
-
-      .resume-link:hover {
-        color: #333;
-        border-color: #333;
-      }
-    </style>
+    <title>Abdul Basit Sajid — backend &amp; infrastructure engineer</title>
+    <meta
+      name="description"
+      content="Backend and infrastructure engineer. Go, Postgres, Kubernetes. Took a real-time GPU inference backend from 3 to 700 concurrent users under load test, where the GPU was never the bottleneck."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://basit.engineer/" />
+    <meta
+      property="og:title"
+      content="Abdul Basit Sajid — backend &amp; infrastructure engineer"
+    />
+    <meta
+      property="og:description"
+      content="Go, Postgres, Kubernetes. 3 to 700 concurrent users under load test on a GPU inference backend — the GPU was never the bottleneck."
+    />
+    <meta name="twitter:card" content="summary" />
+    <link rel="canonical" href="https://basit.engineer/" />
+    <link rel="stylesheet" href="style.css" />
   </head>
   <body>
-    <div class="centered-content">
-      <h1>I'm Abdul Basit</h1>
-      <p>I engineer distributed systems and Kubernetes operators in Go, and ship production backends in NestJS, Django, Flask, and Express.</p>
-      <a href="abdulbasit.pdf" target="_blank" class="resume-link">Want to know more?</a>
+    <a class="skip" href="#main">Skip to content</a>
+    <div class="wrap">
+      <header>
+        <h1>Abdul Basit Sajid</h1>
+        <p class="tagline">
+          Backend and infrastructure engineer. Go, Postgres, Kubernetes. Most of
+          what follows is a number and how it was measured.
+        </p>
+      </header>
+
+      <main id="main">
+        <p class="lede">
+          Three years in, remote for
+          <a href="https://www.eliteitteam.com/" rel="noopener">EliteITTeam</a>
+          (Manchester, UK) from Pakistan. The work I would point at first is a
+          real-time GPU inference backend I took from three concurrent users to
+          700 under load test — where the finding that mattered was that the GPU
+          had never been the bottleneck — and a capacity analysis where the
+          correct recommendation turned out to be that we not build the system
+          at all.
+        </p>
+
+        <section aria-labelledby="numbers">
+          <h2 id="numbers">Three measurements</h2>
+          <ul class="metrics">
+            <li>
+              <span class="figure">
+                <span class="from">3</span><span class="arrow">→</span>700
+                concurrent users
+              </span>
+              <p>
+                Real-time GPU inference backend, proved under load test at 99.4%
+                delivery and $0.0106 per user-hour. GPU utilisation sat at 0–13%
+                the whole time — the ceiling was the Python GIL.
+                <a href="work/orb-vision.html">How that was found →</a>
+              </p>
+            </li>
+            <li>
+              <span class="figure">
+                <span class="from">61.9 s</span><span class="arrow">→</span>1.9 s
+              </span>
+              <p>
+                Branching a 5 GiB Postgres database in pgbranch, after finding
+                that Postgres opens every file read-write before WAL replay and
+                OverlayFS answers that with a full copy-up. The writable layer
+                went from 5.05 GiB to 33 MiB.
+                <a href="work/pgbranch.html">The diagnosis →</a>
+              </p>
+            </li>
+            <li>
+              <span class="figure">
+                <span class="from">$475k/mo</span><span class="arrow">→</span>~$200/mo
+              </span>
+              <p>
+                A projected infrastructure bill, closed by an architectural
+                recommendation rather than a build. The same analysis corrected
+                a leadership capacity estimate by 2.5× and found that GPUs are
+                excluded from GCP's Flexible committed-use discounts.
+              </p>
+            </li>
+          </ul>
+        </section>
+
+        <section aria-labelledby="oss">
+          <h2 id="oss">Open source</h2>
+          <p class="lede" style="margin-bottom: 1.6rem">
+            Worth stating plainly: every Kubernetes system below is a personal
+            project. Production at work is PM2 and Docker on single VMs. I have
+            operated that, not a cluster.
+          </p>
+          <ul class="rows">
+            <li>
+              <span class="name">pgbranch</span>
+              <p>
+                Copy-on-write Postgres branches on plain Docker or Kubernetes.
+                Branching a 5 GiB database took 61.9 s and left a 5.05 GiB
+                writable layer inside a system whose premise is that it copies
+                nothing; it now takes 1.9 s and 33 MiB.
+              </p>
+              <div class="links">
+                <a href="https://github.com/abd-ulbasit/pgbranch" rel="noopener"
+                  >github.com/abd-ulbasit/pgbranch</a
+                >
+                <a href="work/pgbranch.html">case study</a>
+              </div>
+            </li>
+            <li>
+              <span class="name">upgradescope</span>
+              <p>
+                Kubernetes upgrade-readiness scanner. Reads a live cluster and
+                answers whether it survives the next minor version in about a
+                quarter of a second. Every claim in its API-lifecycle dataset
+                carries a citation, and CI regenerates the dataset on every push
+                and fails on any diff.
+              </p>
+              <div class="links">
+                <a
+                  href="https://github.com/abd-ulbasit/upgradescope"
+                  rel="noopener"
+                  >github.com/abd-ulbasit/upgradescope</a
+                >
+              </div>
+            </li>
+            <li>
+              <span class="name">forgepoint</span>
+              <p>
+                ML-lifecycle platform: 11 Go microservices on Kubernetes over
+                gRPC and NATS JetStream, implementing saga compensation, event
+                sourcing, CQRS and a transactional outbox — including a
+                cancelled saga that still has to durably record that it was
+                cancelled, on a context that is already dead.
+              </p>
+              <div class="links">
+                <a
+                  href="https://github.com/abd-ulbasit/forgepoint"
+                  rel="noopener"
+                  >github.com/abd-ulbasit/forgepoint</a
+                >
+              </div>
+            </li>
+            <li>
+              <span class="name">goplatform</span>
+              <p>
+                Kubernetes operator. A 20-line Application CRD provisions
+                Postgres, Redis and RabbitMQ, injects the credentials, and
+                reports configuration drift — the hard part being to tell an
+                external edit apart from expected change, which it does by
+                comparing spec generation against last-reconciled generation.
+              </p>
+              <div class="links">
+                <a
+                  href="https://github.com/abd-ulbasit/goplatform"
+                  rel="noopener"
+                  >github.com/abd-ulbasit/goplatform</a
+                >
+              </div>
+            </li>
+            <li>
+              <span class="name">goqueue</span>
+              <p>
+                Distributed message queue in Go: append-only log, leader
+                election with no ZooKeeper or etcd, and a hierarchical timing
+                wheel for O(1) delayed delivery. A cancel racing a bucket drain
+                silently orphaned every remaining timer in that bucket — no
+                panic, no failing test, no log line — for up to 7.76 days.
+              </p>
+              <div class="links">
+                <a href="https://github.com/abd-ulbasit/goqueue" rel="noopener"
+                  >github.com/abd-ulbasit/goqueue</a
+                >
+              </div>
+            </li>
+            <li>
+              <span class="name">gogate</span>
+              <p>
+                L4/L7 proxy and load balancer with no dependencies in the
+                request path. Its circuit breaker's half-open state admitted
+                every caller — 64 of 64 when 64 goroutines were released at
+                once — so it was a label rather than admission control. 8,000
+                concurrent proxied connections measured; the ceiling was my test
+                topology, not the proxy.
+              </p>
+              <div class="links">
+                <a href="https://github.com/abd-ulbasit/gogate" rel="noopener"
+                  >github.com/abd-ulbasit/gogate</a
+                >
+              </div>
+            </li>
+            <li>
+              <span class="name">bookstore-kubernetes-guide</span>
+              <p>
+                A 16-part, 115-chapter written guide that takes one bookstore
+                application from a container to a running cluster. Published as
+                a site, not a repo of notes.
+              </p>
+              <div class="links">
+                <a
+                  href="https://abd-ulbasit.github.io/bookstore-kubernetes-guide/"
+                  rel="noopener"
+                  >read it</a
+                >
+                <a
+                  href="https://github.com/abd-ulbasit/bookstore-kubernetes-guide"
+                  rel="noopener"
+                  >github.com/abd-ulbasit/bookstore-kubernetes-guide</a
+                >
+              </div>
+            </li>
+          </ul>
+        </section>
+
+        <section aria-labelledby="closed">
+          <h2 id="closed">Closed source</h2>
+          <ul class="rows">
+            <li>
+              <span class="name">Media rendering &amp; distribution pipeline</span>
+              <span class="tag">private</span>
+              <p>
+                A data-driven system that turns a JSON scene graph into finished
+                1080p/4K video: TTS synthesis, word-level cue alignment,
+                React/SVG component rendering, and an ffmpeg assemble-and-verify
+                chain. A scheduler publishes across several third-party
+                platforms on a calendar and reconciles local state against each
+                platform's API, which always wins; drift escalates to a human.
+                Running unattended on cron since June.
+              </p>
+            </li>
+            <li>
+              <span class="name">ORB Vision — real-time inference backend</span
+              ><span class="tag">EliteITTeam</span>
+              <p>
+                3 → 700 concurrent users under load test; 2,800 ms → 60 ms
+                inference; 871 ms → 59 ms p50 once a <code>broadcast=True</code>
+                fan-out was removed. Three of my own hypotheses were falsified
+                along the way.
+              </p>
+              <div class="links">
+                <a href="work/orb-vision.html">case study</a>
+              </div>
+            </li>
+            <li>
+              <span class="name">Reporting endpoint, tenant analytics</span
+              ><span class="tag">EliteITTeam</span>
+              <p>
+                2.5 s → 650 ms, by collapsing six sequential MongoDB queries
+                into one <code>$facet</code> aggregation.
+              </p>
+            </li>
+            <li>
+              <span class="name">Edtech platform, backend</span
+              ><span class="tag">EliteITTeam</span>
+              <p>
+                107 of 165 commits mine. Production migrations — SMTP
+                cutover, staging rename, backups — plus a Stripe webhook
+                root-cause and the production data repair that followed it, run
+                dry-first with checksums and a written rollback.
+              </p>
+            </li>
+          </ul>
+        </section>
+      </main>
+
+      <footer>
+        <ul class="contact">
+          <li><a href="abdulbasit.pdf">Résumé (PDF)</a></li>
+          <li>
+            <a href="https://github.com/abd-ulbasit" rel="noopener">GitHub</a>
+          </li>
+          <li>
+            <a href="https://www.linkedin.com/in/abd-ulbasit/" rel="noopener"
+              >LinkedIn</a
+            >
+          </li>
+          <li><a href="mailto:basit@basit.engineer">basit@basit.engineer</a></li>
+        </ul>
+        <p class="meta">
+          Pakistan · UTC+5 · remote for a UK team since September 2023
+        </p>
+      </footer>
     </div>
   </body>
 </html>
