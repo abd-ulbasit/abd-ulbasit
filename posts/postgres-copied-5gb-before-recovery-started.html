@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Postgres copied 5 GiB before recovery started — Abdul Basit Sajid</title>
+    <meta
+      name="description"
+      content="My copy-on-write Postgres branching benchmark said a 5 GiB branch took 61.9 s and left a 5.05 GiB writable layer. The cause was a pre-recovery fsync pass opening every data file O_RDWR, which forces a full OverlayFS copy-up."
+    />
+    <meta property="og:type" content="article" />
+    <meta
+      property="og:url"
+      content="https://basit.engineer/posts/postgres-copied-5gb-before-recovery-started.html"
+    />
+    <meta property="og:title" content="Postgres copied 5 GiB before recovery started" />
+    <meta
+      property="og:description"
+      content="A copy-on-write branching benchmark said a 5 GiB branch took 61.9 s and wrote 5.05 GiB. The cause was OverlayFS copy-up, triggered by Postgres's pre-recovery fsync pass opening every file O_RDWR."
+    />
+    <meta name="twitter:card" content="summary" />
+    <link
+      rel="canonical"
+      href="https://basit.engineer/posts/postgres-copied-5gb-before-recovery-started.html"
+    />
+    <link rel="stylesheet" href="../style.css" />
+    <style>
+      /* Page-scoped additions: the shared stylesheet has no block-code or
+         ordered-list rules. Both are built from its own tokens. */
+      pre {
+        font-family: var(--font-mono);
+        font-size: 0.8rem;
+        line-height: 1.55;
+        background: var(--surface);
+        border: 1px solid var(--rule);
+        border-radius: 3px;
+        padding: 0.9rem 1.05rem;
+        overflow-x: auto;
+        margin: 0 0 1.4rem;
+      }
+
+      pre code {
+        background: none;
+        border: 0;
+        padding: 0;
+        font-size: inherit;
+        overflow-wrap: normal;
+      }
+
+      ol.plain {
+        padding-left: 1.35rem;
+        margin: 0 0 1.15rem;
+        max-width: var(--measure);
+      }
+
+      ol.plain li {
+        margin-bottom: 0.5rem;
+      }
+    </style>
+  </head>
+  <body>
+    <a class="skip" href="#main">Skip to content</a>
+    <div class="wrap case">
+      <a class="back" href="../index.html">← Abdul Basit Sajid</a>
+
+      <header>
+        <span class="step">Writing · 2026-07-26</span>
+        <h1>Postgres copied 5 GiB before recovery started</h1>
+        <p class="tagline">
+          A benchmark said my copy-on-write branching system copied the entire database. It was right, and the
+          reason was a durability pass that opens every file read-write before WAL replay.
+        </p>
+        <p class="meta">Postgres · OverlayFS · Linux · copy-on-write</p>
+      </header>
+
+      <main id="main">
+        <section>
+          <p>
+            I've been building <a href="https://github.com/abd-ulbasit/pgbranch" rel="noopener">pgbranch</a>, which
+            gives you copy-on-write branches of a Postgres database: seed once from a running server, then create
+            disposable, writable copies that share the base data and store only what they change. Each branch is a
+            stock <code>postgres</code> container whose <code>PGDATA</code> is an OverlayFS mount — the seeded source
+            volume read-only below, an empty writable volume on top.
+          </p>
+
+          <p>
+            The first real benchmark said branching a 5 GiB database took <strong>61.9 seconds</strong> and left a
+            <strong>5.05 GiB</strong> writable layer behind.
+          </p>
+
+          <p>
+            The 61.9 seconds is a performance problem. The 5.05 GiB is a correctness problem. On a system whose entire
+            premise is that a branch shares one base and writes only its own changes, a writable layer the size of the
+            whole dataset means the copy-on-write is not happening. I had built a slow <code>cp</code>.
+          </p>
+        </section>
+
+        <section>
+          <h2>The measurement</h2>
+
+          <p>
+            <code>hack/benchmark.sh</code>, five create/destroy cycles per size, on a Colima VM (4 CPUs, 8 GiB RAM,
+            Ubuntu 24.04, kernel 6.8, Docker's overlay2 driver on a VM-local ext4 disk) on an M1 Pro. Databases
+            generated with <code>pgbench -i</code>.
+          </p>
+
+          <div class="scroll">
+            <table>
+              <caption>
+                Before the fix. Branch creation scaled with database size — the opposite of what a copy-on-write
+                system should do.
+              </caption>
+              <thead>
+                <tr>
+                  <th scope="col">Database</th>
+                  <th scope="col" class="num">Branch create (p50 of 5)</th>
+                  <th scope="col" class="num">Writable layer after create</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <th scope="row">1.00 GiB</th>
+                  <td class="num">7.66 s</td>
+                  <td class="num">1.05 GiB</td>
+                </tr>
+                <tr>
+                  <th scope="row">5.00 GiB</th>
+                  <td class="num"><strong>61.85 s</strong></td>
+                  <td class="num"><strong>5.05 GiB</strong></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p>
+            Individual 5 GiB runs: 69.9, 66.1, 61.4, 60.0, 61.9 s. Not noise, not a cold-cache artifact — a stable
+            cost that scaled with data size.
+          </p>
+
+          <p>Two things fell out of the table immediately:</p>
+
+          <ol class="plain">
+            <li>
+              The writable layer was ≈ the database size, every time. 1.05 GiB for a 1.00 GiB database, 5.05 GiB for a
+              5.00 GiB one. That's not "some overhead." That's a full copy plus change.
+            </li>
+            <li>
+              Divide bytes by seconds and you get ~87 MB/s at 5 GiB and ~140 MB/s at 1 GiB. That's not a Postgres
+              number, it's a disk number — the smaller dataset fits the VM's page cache and the larger one doesn't.
+              Create time wasn't being spent on anything clever. It was being spent moving bytes.
+            </li>
+          </ol>
+
+          <p>
+            So the question stopped being "why is branch creation slow" and became "who is copying the database, and
+            when."
+          </p>
+        </section>
+
+        <section>
+          <h2>Who</h2>
+
+          <p>
+            A branch's seed comes from <code>pg_basebackup</code>, which means the data directory it boots on is a
+            crash-consistent snapshot. So a branch's first boot is crash recovery. And the branch logs said the
+            recovery itself did nothing:
+          </p>
+
+          <pre><code>redo done at 0/6000060 system usage: ... elapsed: 0.00 s</code></pre>
+
+          <p>
+            Zero seconds of redo, after sixty seconds of <em>something</em>. Whatever was eating the time happened
+            before WAL replay.
+          </p>
+
+          <p>
+            Before replaying WAL, Postgres syncs the data directory — <code>SyncDataDirectory()</code>. The point is
+            durability: if the cluster crashed once, there may be dirty pages from before the crash sitting in the OS
+            page cache, and recovery must not build on top of writes that could still be lost. So Postgres walks the
+            entire data directory and fsyncs every file in it, before it touches the WAL.
+          </p>
+
+          <p>The relevant detail is <em>how</em> it opens those files. Shape of it, from <code>fd.c</code>:</p>
+
+          <pre><code>/* fsync_fname_ext(), simplified */
+flags = PG_BINARY;
+if (!isdir)
+    flags |= O_RDWR;    /* not every platform allows fsync() on a read-only fd */
+else
+    flags |= O_RDONLY;
+
+fd = OpenTransientFile(fname, flags);
+pg_fsync(fd);
+CloseTransientFile(fd);</code></pre>
+
+          <p>
+            Every regular file in <code>PGDATA</code>, opened read-write. It writes nothing. It opens, fsyncs, closes.
+            On any normal filesystem that's a cheap portability quirk that nobody has to think about.
+          </p>
+
+          <p>On OverlayFS it is the whole bug.</p>
+        </section>
+
+        <section>
+          <h2>OverlayFS copies up on open, not on write</h2>
+
+          <p>
+            The kernel's overlayfs documentation puts it plainly: when a file in the lower layer is accessed in a way
+            that requires write access — "such as opening for write access" — it is first copied from the lower
+            filesystem to the upper filesystem.
+          </p>
+
+          <p>
+            Read that as an implementation detail, because it is one:
+            <strong>the copy-up is triggered by the open, not by the write.</strong> A process that opens a lower-layer
+            file <code>O_RDWR</code>, writes not a single byte, and immediately closes it has still copied the entire
+            file into the upper layer. The kernel cannot know at open time that you weren't going to write, so it
+            materializes the file first and asks questions never.
+          </p>
+
+          <p>
+            If you want to see it with Postgres out of the way, this is the whole thing in eight lines. Run it as
+            root, with the scratch directory on ext4 or xfs — tmpfs isn't a valid <code>upperdir</code>:
+          </p>
+
+          <pre><code>mkdir -p /var/tmp/ovl/{lower,upper,work,merged}
+dd if=/dev/zero of=/var/tmp/ovl/lower/big bs=1M count=100 status=none
+mount -t overlay overlay \
+  -o lowerdir=/var/tmp/ovl/lower,upperdir=/var/tmp/ovl/upper,workdir=/var/tmp/ovl/work \
+  /var/tmp/ovl/merged
+
+du -sh /var/tmp/ovl/upper    # 0 — nothing has been touched yet
+
+# open read-write, write nothing, close
+python3 -c 'import os; os.close(os.open("/var/tmp/ovl/merged/big", os.O_RDWR))'
+
+du -sh /var/tmp/ovl/upper    # 100M</code></pre>
+
+          <p>
+            Now put the two halves together. Postgres opens every file in <code>PGDATA</code> read-write to fsync it.
+            OverlayFS copies up every file that is opened read-write. So the durability pass that runs
+            <em>before</em> recovery copied the entire dataset into the branch's supposedly-empty writable layer,
+            before the branch served a single query — in preparation for a WAL replay that then took 0.00 seconds.
+          </p>
+
+          <p>
+            The mechanism isn't specific to Postgres. Anything that fsyncs a directory tree at startup, or chowns it,
+            or opens files read-write to check them, will do this on any overlay-backed filesystem. That's every
+            container image layer in the world.
+          </p>
+        </section>
+
+        <section>
+          <h2>Confirming it, and the fix</h2>
+
+          <p>
+            A plausible mechanism isn't a diagnosis. <code>recovery_init_sync_method</code> (Postgres 14+) exists
+            precisely to replace the per-file pass with a single <code>syncfs()</code> call per filesystem, so the
+            control run is one flag on an otherwise identical run:
+          </p>
+
+          <pre><code>exec docker-entrypoint.sh postgres -c recovery_init_sync_method=syncfs</code></pre>
+
+          <p>
+            That run finished recovery with the writable layer at <strong>16 KiB</strong>. Not 5 GiB, not 500 MiB —
+            16 KiB. One variable, and the copy disappeared entirely.
+          </p>
+
+          <p>
+            That control run is now the fix; it's a single line in the branch entrypoint. Re-running the same
+            benchmark with it in place:
+          </p>
+
+          <div class="scroll">
+            <table>
+              <caption>
+                Same script, same machine, one flag changed. All five raw runs for both configurations are published
+                in the repository rather than summarised away.
+              </caption>
+              <thead>
+                <tr>
+                  <th scope="col">5.00 GiB database</th>
+                  <th scope="col" class="num">Branch create (p50 of 5)</th>
+                  <th scope="col" class="num">Writable layer after create</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <th scope="row">before</th>
+                  <td class="num">61.85 s</td>
+                  <td class="num">5.05 GiB</td>
+                </tr>
+                <tr>
+                  <th scope="row">after</th>
+                  <td class="num"><strong>1.89 s</strong></td>
+                  <td class="num"><strong>33.1 MiB</strong></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p>
+            And creation is now flat in database size — 1.90 s at 1 GiB, 1.89 s at 5 GiB — which is what a
+            copy-on-write system is supposed to look like. The 33.1 MiB is recycled WAL segments written during
+            recovery plus overlay bookkeeping.
+          </p>
+
+          <p>
+            <strong>Why <code>syncfs</code> is safe here, specifically.</strong> <code>syncfs()</code> syncs the whole
+            filesystem containing the data directory, which is a <em>superset</em> of what the per-file pass covers,
+            so the property that pass exists to guarantee — no pre-recovery dirty pages left unflushed — still holds,
+            and crash-recovery semantics don't change. The documented downsides of <code>syncfs</code> are that I/O
+            errors on unrelated files on the same filesystem can be reported to you, and that on some kernels errors
+            can be missed; both are scoped to <em>other files on the same filesystem</em>, and a pgbranch branch's
+            filesystem is its own disposable overlay mount holding nothing else. It costs me Postgres 13 and below,
+            and Linux-only, which is now a documented support floor rather than a silent degradation.
+          </p>
+        </section>
+
+        <section>
+          <h2>What I did not fix</h2>
+
+          <p>The cost moved. It did not vanish, and pretending otherwise would make the numbers above worthless.</p>
+
+          <div class="note">
+            <p>
+              <strong>OverlayFS copies up whole files</strong>, and Postgres heap and index segments run to 1 GiB
+              each. Before the fix, creation had already materialized every file, so subsequent writes only grew an
+              already-copied layer. After the fix the layer starts near-empty, so the first write to any segment pays
+              that segment's entire copy-up. The write-amplification column in my own benchmarks reads <em>worse</em>
+              after the fix than before it: on the 5 GiB dataset, updating 1% of rows grew the writable layer by
+              <strong>+179.1 MiB</strong> before, and lands it at <strong>5.20 GiB</strong> after.
+            </p>
+            <p>
+              Those two numbers measure different things — the old probe measured incremental growth of a
+              fully-materialized layer, the new one measures copy-up from scratch — but the underlying trade is real.
+              A bulk <code>UPDATE</code> plus <code>CHECKPOINT</code> touching every segment converges on roughly 1×
+              the database.
+            </p>
+          </div>
+
+          <p>
+            So the honest statement is:
+            <strong>the cost moved from pay-at-create to pay-per-file-written.</strong> For the workload this is built
+            for — dev, CI, and PR-review branches that read a lot and write a little — that's strictly better, and
+            branches stay in the tens of megabytes. For a branch that rewrites its whole dataset, it's a wash.
+            Block-level copy-on-write (ZFS, or a CSI driver with real snapshots) doesn't have this problem at all,
+            because its copy-up granularity is a block rather than a file. That's a genuine advantage of those
+            backends and I'd rather say so than round it off.
+          </p>
+        </section>
+
+        <section>
+          <h2>Where this sits</h2>
+
+          <p>
+            There are good tools here and I'm not going to pretend otherwise. <a href="https://neon.tech" rel="noopener">Neon</a>
+            and <a href="https://supabase.com" rel="noopener">Supabase</a> both do database branching well — but in
+            their clouds, on their storage. You can't point them at the Postgres you already run.
+            <a href="https://postgres.ai/products/how-it-works" rel="noopener">DBLab</a> is the established
+            self-hosted answer, and it's block-level CoW, which as noted is technically the better primitive — the
+            cost is that you provision and operate a ZFS or LVM pool for it.
+          </p>
+
+          <p>
+            pgbranch takes the middle path: plain Docker or Kubernetes, stock Postgres images, and OverlayFS — the
+            same mechanism container images already use — applied to <code>PGDATA</code>. No special filesystem, no
+            cloud, no patched Postgres. The whole-file copy-up granularity above is the price of that choice.
+          </p>
+        </section>
+
+        <section>
+          <h2>The part worth keeping</h2>
+
+          <p>Two things I'd take to the next project:</p>
+
+          <p>
+            <strong>A benchmark that contradicts your design is the most valuable output it can produce.</strong> The
+            number that mattered wasn't 61.9 seconds, it was 5.05 GiB — because "slow" invites tuning and "the
+            writable layer is the size of the database" tells you the design isn't running. I nearly went looking for
+            I/O tuning knobs first.
+          </p>
+
+          <p>
+            <strong>Copy-on-write filesystems are triggered by intent, not by action.</strong> OverlayFS charges you a
+            full file copy for <em>declaring</em> you might write. So on an overlay-backed path, <code>O_RDWR</code>
+            is not a cheap default — it's a commitment, and any code that opens files read-write "just to be safe" is
+            buying the most expensive thing in the system.
+          </p>
+
+          <p>
+            Full before/after tables, methodology, hardware, and the pre-fix numbers kept intact:
+            <a
+              href="https://github.com/abd-ulbasit/pgbranch/blob/main/docs/benchmarks.md"
+              rel="noopener"
+              >docs/benchmarks.md</a
+            >. The project is Go and Apache-2.0:
+            <a href="https://github.com/abd-ulbasit/pgbranch" rel="noopener">github.com/abd-ulbasit/pgbranch</a>.
+          </p>
+        </section>
+      </main>
+
+      <footer>
+        <ul class="contact">
+          <li><a href="../index.html">Home</a></li>
+          <li><a href="../work/pgbranch.html">pgbranch case study</a></li>
+          <li><a href="https://github.com/abd-ulbasit/pgbranch" rel="noopener">Repository</a></li>
+          <li><a href="mailto:basit@basit.engineer">basit@basit.engineer</a></li>
+        </ul>
+      </footer>
+    </div>
+  </body>
+</html>
