@@ -8,7 +8,7 @@
     </title>
     <meta
       name="description"
-      content="A real-time GPU inference backend whose p50 exploded while the GPU sat at 0–13% utilisation. The ceiling was the Python GIL, not the hardware. Proved to a 500-concurrent ceiling under load test."
+      content="A real-time GPU inference backend whose p50 exploded while GPU utilisation sat at 0–13% under normal load. The ceiling was the Python GIL, not the hardware. Proved to 500 concurrent under load test, on four GPUs."
     />
     <meta property="og:type" content="article" />
     <meta
@@ -21,7 +21,7 @@
     />
     <meta
       property="og:description"
-      content="0–13% GPU utilisation while latency collapsed, and three of my own hypotheses falsified before the real one survived."
+      content="0–13% GPU utilisation under normal load while latency collapsed, and three of my own hypotheses falsified before the real one survived."
     />
     <meta
       property="og:image"
