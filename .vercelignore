@@ -1,0 +1,20 @@
+# Files that are not pages. The repository root is the web root, so anything
+# committed here is a URL unless it is kept out of the deployment.
+#
+# vercel.json answers these paths with 404, but a `routes` rule with a status
+# and no dest only rewrites the status line: Vercel still sent the whole file
+# body under it. Verified after the deploy of 9217a17:
+#
+#   /posts/postgres-copied-5gb-before-recovery-started.md  404, 11020 bytes
+#   /scripts/verify_links.py                               404, 16186 bytes
+#
+# So the exclusion has to happen before the upload, not at request time. The
+# vercel.json rule stays as the second line of defence, and as the thing that
+# still answers 404 for a path that is ignored here but cached at the edge.
+
+scripts/
+.github/
+*.md
+*.py
+*.yaml
+*.yml
