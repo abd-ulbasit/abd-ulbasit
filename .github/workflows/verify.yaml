@@ -1,9 +1,9 @@
-name: Verify README links
+name: Verify links
 
 # Replaces the old "README build" workflow, which regenerated an SVG stats card
 # every night and pushed it back to master. That job wrote 34 of this
 # repository's first 65 commits. This one writes nothing to the repository: it
-# checks the README's links and opens an issue when one rots.
+# checks the README's and the site's links and opens an issue when one rots.
 #
 # On the 60-day auto-disable: GitHub disables scheduled workflows in
 # repositories with no activity for 60 days, and pushes made by a bot with the
@@ -16,6 +16,12 @@ name: Verify README links
 # current. When this checker dies, the README stays exactly as it was last
 # written by hand, and nothing starts lying. Re-enable it from the Actions tab,
 # or run it on demand with workflow_dispatch.
+#
+# No paths filter. There used to be one, listing README.md and the script, and
+# it meant an index.html that started pointing at a file nobody shipped did not
+# trigger anything. A filter that has to be kept in sync with what the checker
+# covers is one more thing that can quietly stop being true; this repository is
+# four pages and a README, so every push to master pays for the whole check.
 
 on:
   schedule:
@@ -23,17 +29,13 @@ on:
   workflow_dispatch:
   push:
     branches: [master]
-    paths:
-      - README.md
-      - scripts/verify_links.py
-      - .github/workflows/verify.yaml
 
 permissions:
   contents: read
   issues: write
 
 concurrency:
-  group: verify-readme-links
+  group: verify-links
   cancel-in-progress: false
 
 jobs:
@@ -46,7 +48,13 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Check every link, pinned line and anchor
+      # The checker first. A green run here means nothing if the checker cannot
+      # fail, so these tests break a throwaway copy of the tree on purpose and
+      # assert it notices. They use no network.
+      - name: Prove the checker still catches a broken tree
+        run: python scripts/test_verify_links.py
+
+      - name: Check every link, pinned line, anchor and canonical URL
         id: check
         run: |
           set +e
@@ -63,7 +71,7 @@ jobs:
         run: |
           set -euo pipefail
           {
-            echo "\`scripts/verify_links.py\` failed. The profile README is making a claim that no longer resolves."
+            echo "\`scripts/verify_links.py\` failed. The README or the site is making a claim that no longer resolves."
             echo
             echo '```'
             cat report.txt
@@ -76,8 +84,8 @@ jobs:
           if [ -n "$existing" ]; then
             gh issue comment "$existing" --body-file body.md
           else
-            gh label create link-rot --color B60205 --description "A README link, pinned line or anchor stopped resolving" 2>/dev/null || true
-            gh issue create --title "README link check failed" --label link-rot --body-file body.md
+            gh label create link-rot --color B60205 --description "A link, pinned line, anchor or canonical URL stopped resolving" 2>/dev/null || true
+            gh issue create --title "Link check failed" --label link-rot --body-file body.md
           fi
 
           exit 1
