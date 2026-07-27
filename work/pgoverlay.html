@@ -13,7 +13,7 @@
     <meta property="og:type" content="article" />
     <meta
       property="og:url"
-      content="https://www.basit.engineer/work/pgbranch.html"
+      content="https://www.basit.engineer/work/pgoverlay.html"
     />
     <meta
       property="og:title"
@@ -36,7 +36,7 @@
     <meta name="twitter:card" content="summary_large_image" />
     <link
       rel="canonical"
-      href="https://www.basit.engineer/work/pgbranch.html"
+      href="https://www.basit.engineer/work/pgoverlay.html"
     />
     <link rel="icon" href="/favicon.ico" sizes="any" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
@@ -48,7 +48,7 @@
       <a class="back" href="../index.html">← Abdul Basit Sajid</a>
 
       <header>
-        <span class="step">pgbranch · case study</span>
+        <span class="step">pgoverlay · case study</span>
         <h1>A copy-on-write system that copied everything</h1>
         <p class="tagline">
           The first honest benchmark said branching a 5 GiB database took 61.9
@@ -57,8 +57,8 @@
         </p>
         <p class="meta">
           Go · Postgres · OverlayFS ·
-          <a href="https://github.com/abd-ulbasit/pgbranch" rel="noopener"
-            >github.com/abd-ulbasit/pgbranch</a
+          <a href="https://github.com/abd-ulbasit/pgoverlay" rel="noopener"
+            >github.com/abd-ulbasit/pgoverlay</a
           >
         </p>
       </header>
@@ -67,11 +67,12 @@
         <section>
           <h2>The problem</h2>
           <p>
-            pgbranch gives you a Postgres database per pull request. You seed
-            one dataset once, and every branch after that is supposed to be a
-            copy-on-write view of it: instant to create, cheap to keep, thrown
-            away without ceremony. The entire value proposition is the copying
-            that does not happen.
+            pgoverlay gives you a Postgres database per pull request. You seed
+            one dataset once, and every branch after that is supposed to be an
+            OverlayFS copy-on-write view of it: one read-only base shared by
+            every branch, a writable layer holding only what that branch
+            changes, thrown away without ceremony. The entire value proposition
+            is the copying that does not happen.
           </p>
           <p>
             So the number that mattered was not the 61.9 seconds. It was the
@@ -88,7 +89,7 @@
         <section>
           <h2>The explanation I expected, and why it was wrong</h2>
           <p>
-            pgbranch seeds with <code>pg_basebackup</code>, so a branch's first
+            pgoverlay seeds with <code>pg_basebackup</code>, so a branch's first
             boot is a crash recovery: Postgres replays WAL to bring the data
             directory to a consistent state. That is a real, known cost, and it
             was the obvious suspect: a slow, I/O-heavy recovery pass that
@@ -252,7 +253,7 @@
             <p>
               That number is worse and it is published anyway, next to the one
               it replaced. The two are not measuring the same thing, and the
-              honest framing is that pgbranch moved the cost from
+              honest framing is that pgoverlay moved the cost from
               pay-at-creation to pay-per-file-written. For branches that read a
               lot and write a little, which is what a pull-request database
               does, that is strictly better. For a branch that rewrites its
@@ -283,7 +284,7 @@
         <ul class="contact">
           <li><a href="../index.html">Home</a></li>
           <li>
-            <a href="https://github.com/abd-ulbasit/pgbranch" rel="noopener"
+            <a href="https://github.com/abd-ulbasit/pgoverlay" rel="noopener"
               >Repository</a
             >
           </li>

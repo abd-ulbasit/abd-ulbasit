@@ -79,11 +79,11 @@
                 <span class="from">61.9 s</span><span class="arrow">→</span>1.9 s
               </span>
               <p>
-                Branching a 5 GiB Postgres database in pgbranch, after finding
+                Branching a 5 GiB Postgres database in pgoverlay, after finding
                 that Postgres opens every file read-write before WAL replay and
                 OverlayFS answers that with a full copy-up. The writable layer
                 went from 5.05 GiB to 33 MiB.
-                <a href="work/pgbranch.html">The diagnosis →</a>
+                <a href="work/pgoverlay.html">The diagnosis →</a>
               </p>
             </li>
             <li>
@@ -106,18 +106,20 @@
           <h2 id="oss">Open source</h2>
           <ul class="rows">
             <li>
-              <span class="name">pgbranch</span>
+              <span class="name">pgoverlay</span>
               <p>
-                Copy-on-write Postgres branches on plain Docker or Kubernetes.
-                Branching a 5 GiB database took 61.9 s and left a 5.05 GiB
-                writable layer inside a system whose premise is that it copies
-                nothing; it now takes 1.9 s and 33 MiB.
+                Copy-on-write Postgres branches on plain Docker or Kubernetes,
+                built on OverlayFS: every branch shares one read-only base and
+                stores only its own changes. Branching a 5 GiB database took
+                61.9 s and left a 5.05 GiB writable layer inside a system whose
+                premise is that it copies nothing; it now takes 1.9 s and 33
+                MiB.
               </p>
               <div class="links">
-                <a href="https://github.com/abd-ulbasit/pgbranch" rel="noopener"
-                  >github.com/abd-ulbasit/pgbranch</a
+                <a href="https://github.com/abd-ulbasit/pgoverlay" rel="noopener"
+                  >github.com/abd-ulbasit/pgoverlay</a
                 >
-                <a href="work/pgbranch.html">case study</a>
+                <a href="work/pgoverlay.html">case study</a>
               </div>
             </li>
             <li>

@@ -72,11 +72,11 @@ class TheTreeAsItStandsPasses(CheckerCase):
 
 class BrokenLinks(CheckerCase):
     def test_relative_link_to_a_missing_file(self):
-        self.edit("index.html", 'href="work/pgbranch.html"', 'href="work/pgbrnach.html"')
+        self.edit("index.html", 'href="work/pgoverlay.html"', 'href="work/pgovrelay.html"')
         self.assertFails("no such file")
 
     def test_renaming_a_page_breaks_the_pages_that_link_to_it(self):
-        os.rename(self.path("work/pgbranch.html"), self.path("work/pgbranch-v2.html"))
+        os.rename(self.path("work/pgoverlay.html"), self.path("work/pgoverlay-v2.html"))
         self.assertFails("no such file")
 
     def test_root_relative_asset_that_does_not_exist(self):
@@ -99,8 +99,8 @@ class BrokenSocialAndCanonicalTags(CheckerCase):
 
     def test_og_url_left_on_the_wrong_page(self):
         self.edit(
-            "work/pgbranch.html",
-            "https://www.basit.engineer/work/pgbranch.html",
+            "work/pgoverlay.html",
+            "https://www.basit.engineer/work/pgoverlay.html",
             "https://www.basit.engineer/work/real-time-inference.html",
         )
         self.assertFails("og:url disagrees with where the page is served")
@@ -160,7 +160,7 @@ class NetworkChecks(CheckerCase):
         self.assertEqual(status, 0, output)
 
     def test_dead_third_party_link(self):
-        dead = "https://github.com/abd-ulbasit/pgbranch"
+        dead = "https://github.com/abd-ulbasit/pgoverlay"
         self.use(canned_fetch(**{dead: (404, "")}))
         status, output = self.run_checker()
         self.assertEqual(status, 1, output)
@@ -190,7 +190,7 @@ class NetworkChecks(CheckerCase):
         self.assertIn("past end of file", output)
 
     def test_markdown_anchor_whose_heading_was_renamed(self):
-        raw = ("https://raw.githubusercontent.com/abd-ulbasit/pgbranch/"
+        raw = ("https://raw.githubusercontent.com/abd-ulbasit/pgoverlay/"
                "main/docs/benchmarks.md")
         self.use(canned_fetch(**{raw: (200, "## Some other heading\n")}))
         status, output = self.run_checker()
@@ -200,14 +200,15 @@ class NetworkChecks(CheckerCase):
 
 class SitemapAndRobots(CheckerCase):
     def test_new_page_missing_from_the_sitemap(self):
-        shutil.copy(self.path("work/pgbranch.html"), self.path("work/pgbranch-part-2.html"))
+        shutil.copy(self.path("work/pgoverlay.html"),
+                    self.path("work/pgoverlay-part-2.html"))
         self.assertFails("sitemap.xml does not list")
 
     def test_sitemap_listing_a_page_that_no_longer_exists(self):
         self.edit(
             "sitemap.xml",
-            "<loc>https://www.basit.engineer/work/pgbranch.html</loc>",
-            "<loc>https://www.basit.engineer/work/pgbranch-old.html</loc>",
+            "<loc>https://www.basit.engineer/work/pgoverlay.html</loc>",
+            "<loc>https://www.basit.engineer/work/pgoverlay-old.html</loc>",
         )
         self.assertFails("which is not a page in this repository")
 

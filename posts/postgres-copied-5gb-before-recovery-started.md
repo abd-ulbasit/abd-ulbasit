@@ -7,7 +7,7 @@ tags: [postgres, overlayfs, linux, copy-on-write, docker, performance, debugging
 
 # Postgres copied 5 GiB before recovery started
 
-I've been building [pgbranch](https://github.com/abd-ulbasit/pgbranch), which gives you copy-on-write branches of a Postgres database: seed once from a running server, then create disposable, writable copies that share the base data and store only what they change. Each branch is a stock `postgres` container whose `PGDATA` is an OverlayFS mount: the seeded source volume read-only below, an empty writable volume on top.
+I've been building [pgoverlay](https://github.com/abd-ulbasit/pgoverlay), which gives you copy-on-write branches of a Postgres database: seed once from a running server, then create disposable, writable copies that share the base data and store only what they change. Each branch is a stock `postgres` container whose `PGDATA` is an OverlayFS mount: the seeded source volume read-only below, an empty writable volume on top.
 
 The first real benchmark said branching a 5 GiB database took **61.9 seconds** and left a **5.05 GiB** writable layer behind.
 
@@ -109,7 +109,7 @@ That control run is now the fix; it's a single line in the branch entrypoint. Re
 
 And creation is now flat in database size (1.90 s at 1 GiB, 1.89 s at 5 GiB), which is what a copy-on-write system is supposed to look like. The 33.1 MiB is recycled WAL segments written during recovery plus overlay bookkeeping.
 
-**Why `syncfs` is safe here, specifically.** `syncfs()` syncs the whole filesystem containing the data directory, which is a *superset* of what the per-file pass covers, so the property that pass exists to guarantee (no pre-recovery dirty pages left unflushed) still holds, and crash-recovery semantics don't change. The documented downsides of `syncfs` are that I/O errors on unrelated files on the same filesystem can be reported to you, and that on some kernels errors can be missed; both are scoped to *other files on the same filesystem*, and a pgbranch branch's filesystem is its own disposable overlay mount holding nothing else. It costs me Postgres 13 and below, and Linux-only, which is now a documented support floor rather than a silent degradation.
+**Why `syncfs` is safe here, specifically.** `syncfs()` syncs the whole filesystem containing the data directory, which is a *superset* of what the per-file pass covers, so the property that pass exists to guarantee (no pre-recovery dirty pages left unflushed) still holds, and crash-recovery semantics don't change. The documented downsides of `syncfs` are that I/O errors on unrelated files on the same filesystem can be reported to you, and that on some kernels errors can be missed; both are scoped to *other files on the same filesystem*, and a pgoverlay branch's filesystem is its own disposable overlay mount holding nothing else. It costs me Postgres 13 and below, and Linux-only, which is now a documented support floor rather than a silent degradation.
 
 ## What I did not fix
 
@@ -124,13 +124,13 @@ OverlayFS copies up **whole files**, and Postgres heap and index segments run to
 
 Those two numbers measure different things. The old probe measured incremental growth of a fully-materialized layer; the new one measures copy-up from scratch. But the underlying trade is real. A bulk `UPDATE` plus `CHECKPOINT` touching every segment converges on roughly 1× the database.
 
-So the honest statement is: **the cost moved from pay-at-create to pay-per-file-written.** pgbranch is built for dev, CI, and PR-review branches that read a lot and write a little. For that workload it's strictly better, and branches stay in the tens of megabytes. For a branch that rewrites its whole dataset, it's a wash. Block-level copy-on-write (ZFS, or a CSI driver with real snapshots) doesn't have this problem at all, because its copy-up granularity is a block rather than a file. That's a genuine advantage of those backends and I'd rather say so than round it off.
+So the honest statement is: **the cost moved from pay-at-create to pay-per-file-written.** pgoverlay is built for dev, CI, and PR-review branches that read a lot and write a little. For that workload it's strictly better, and branches stay in the tens of megabytes. For a branch that rewrites its whole dataset, it's a wash. Block-level copy-on-write (ZFS, or a CSI driver with real snapshots) doesn't have this problem at all, because its copy-up granularity is a block rather than a file. That's a genuine advantage of those backends and I'd rather say so than round it off.
 
 ## Where this sits
 
 There are good tools here and I'm not going to pretend otherwise. [Neon](https://neon.tech) and [Supabase](https://supabase.com) both do database branching well. But in their clouds, on their storage. You can't point them at the Postgres you already run. [DBLab](https://postgres.ai/products/how-it-works) is the established self-hosted answer, and it's block-level CoW, which as noted is technically the better primitive. The cost is that you provision and operate a ZFS or LVM pool for it.
 
-pgbranch takes the middle path: plain Docker or Kubernetes, stock Postgres images, and OverlayFS (the same mechanism container images already use) applied to `PGDATA`. No special filesystem, no cloud, no patched Postgres. The whole-file copy-up granularity above is the price of that choice.
+pgoverlay takes the middle path: plain Docker or Kubernetes, stock Postgres images, and OverlayFS (the same mechanism container images already use) applied to `PGDATA`. No special filesystem, no cloud, no patched Postgres. The whole-file copy-up granularity above is the price of that choice.
 
 ## The part worth keeping
 
@@ -142,4 +142,4 @@ Two things I'd take to the next project:
 
 ---
 
-Full before/after tables, methodology, hardware, and the pre-fix numbers kept intact: [docs/benchmarks.md](https://github.com/abd-ulbasit/pgbranch/blob/main/docs/benchmarks.md). The project is Go and Apache-2.0: [github.com/abd-ulbasit/pgbranch](https://github.com/abd-ulbasit/pgbranch).
+Full before/after tables, methodology, hardware, and the pre-fix numbers kept intact: [docs/benchmarks.md](https://github.com/abd-ulbasit/pgoverlay/blob/main/docs/benchmarks.md). The project is Go and Apache-2.0: [github.com/abd-ulbasit/pgoverlay](https://github.com/abd-ulbasit/pgoverlay).

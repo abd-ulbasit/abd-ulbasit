@@ -9,10 +9,10 @@ Four times the number was not what it looked like.
 
 ## A copy-on-write system copied 5 GiB
 
-Branching a 5 GiB Postgres database in [pgbranch][pgbranch] took 61.9 s and left
-a writable layer the size of the entire dataset. On a system whose whole premise
-is that branches share one base and store only their own changes, that is not
-slowness. That is the copy-on-write not happening.
+Branching a 5 GiB Postgres database in [pgoverlay][pgoverlay] took 61.9 s and
+left a writable layer the size of the entire dataset. On a system whose whole
+premise is that branches share one base and store only their own changes, that
+is not slowness. That is the copy-on-write not happening.
 
 The branch's own log said `redo done ... elapsed: 0.00 s`, so the minute went
 somewhere before WAL replay. Before recovery, Postgres fsyncs every file in the
@@ -65,16 +65,16 @@ Fixing the fan-out is what made four GPUs usable in the first place. Proved to
 
 Some of this is still wrong. I do not know which part yet.
 
-[basit.engineer][site] · [pgbranch][pgbranch] · [goqueue][goqueue] ·
+[basit.engineer][site] · [pgoverlay][pgoverlay] · [goqueue][goqueue] ·
 [steward][steward] · [sluice][sluice] · [forgepoint][forgepoint] ·
 [Kubernetes guide][guide]
 
 [site]: https://www.basit.engineer
-[pgbranch]: https://github.com/abd-ulbasit/pgbranch
+[pgoverlay]: https://github.com/abd-ulbasit/pgoverlay
 [goqueue]: https://github.com/abd-ulbasit/goqueue
 [sluice]: https://github.com/abd-ulbasit/sluice
 [steward]: https://github.com/abd-ulbasit/steward
 [forgepoint]: https://github.com/abd-ulbasit/forgepoint
 [guide]: https://github.com/abd-ulbasit/bookstore-kubernetes-guide
-[bench]: https://github.com/abd-ulbasit/pgbranch/blob/main/docs/benchmarks.md#before-the-fix-branch-creation-scaled-with-data-size
+[bench]: https://github.com/abd-ulbasit/pgoverlay/blob/main/docs/benchmarks.md#before-the-fix-branch-creation-scaled-with-data-size
 [note]: https://github.com/abd-ulbasit/goqueue/blob/beac5b4e727f47f1d991f40774948715542788bf/internal/storage/segment.go#L1121
