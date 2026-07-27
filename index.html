@@ -46,7 +46,7 @@
         </p>
 
         <section aria-labelledby="numbers">
-          <h2 id="numbers">Three measurements</h2>
+          <h2 id="numbers">Three numbers, and where they came from</h2>
           <ul class="metrics">
             <li>
               <span class="figure">
@@ -74,13 +74,15 @@
             </li>
             <li>
               <span class="figure">
-                <span class="from">$475k/mo</span><span class="arrow">→</span>~$200/mo
+                <span class="from">$206k/mo</span><span class="arrow">→</span>$475&ndash;570k/mo
               </span>
               <p>
-                A projected infrastructure bill, closed by an architectural
-                recommendation rather than a build. The same analysis corrected
-                a leadership capacity estimate by 2.5× and found that GPUs are
-                excluded from GCP's Flexible committed-use discounts.
+                A correction, not a saving. The internal projection for scaling
+                to 60,000 users assumed 200 users per GPU box; measured capacity
+                was about 90, which more than doubles the real cost. I also
+                found that GPUs are excluded from GCP's Flexible committed-use
+                discounts, so the commitment plan could not rescue it either. My
+                recommendation was that we not build it. We didn't.
               </p>
             </li>
           </ul>
