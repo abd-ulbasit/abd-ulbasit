@@ -68,9 +68,6 @@ Some of this is still wrong. I do not know which part yet.
 [steward][steward] · [sluice][sluice] · [forgepoint][forgepoint] ·
 [Kubernetes guide][guide]
 
-This file used to generate itself. A cron job wrote 34 of the first 65 commits
-in this repository and not one of them said anything.
-
 [site]: https://basit.engineer
 [pgbranch]: https://github.com/abd-ulbasit/pgbranch
 [goqueue]: https://github.com/abd-ulbasit/goqueue
