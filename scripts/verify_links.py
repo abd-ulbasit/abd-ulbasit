@@ -37,6 +37,10 @@ Checks, in increasing order of how much they actually prove:
   7. No source file in the tree is missing from .vercelignore. The repository
      root is the web root, so a .md or .py added here is a public URL by
      default; this is that being caught by CI rather than by a reader.
+  8. Every redirect in vercel.json lands on a file that exists, and none of
+     them shadows one. A page that was renamed keeps its old URL alive through
+     one of these and through nothing else, so a redirect pointing at a file
+     that has since moved again is a 404 that no other check here would see.
 
 Links to this site's own URLs are resolved against the working tree, not
 fetched. Fetching them would make a push race the deploy that satisfies it, and
@@ -54,6 +58,7 @@ against a throwaway copy of the tree:
 """
 
 import argparse
+import json
 import os
 import re
 import sys
@@ -399,6 +404,82 @@ def check_nothing_is_published_by_accident(root, failures):
             )
 
 
+REDIRECT_STATUSES = (301, 302, 307, 308)
+
+
+def literal_src(src):
+    """The single path a `^/some/path\\.html$` route matches, or None.
+
+    Only fully anchored literals are read, with `\\.` as the one escape this
+    understands. Anything with real regex in it returns None and is left
+    alone, because guessing at what a pattern matches would be worse than not
+    checking it.
+    """
+    if not (src.startswith("^") and src.endswith("$")):
+        return None
+    body = src[1:-1]
+    if not body.startswith("/"):
+        return None
+    if re.search(r"[\\^$*+?()\[\]{}|.]", body.replace("\\.", "")):
+        return None
+    return body.replace("\\.", ".")
+
+
+def check_redirects(root, failures):
+    """Every redirect in vercel.json lands somewhere real and hides nothing.
+
+    work/pgoverlay.html was work/pgbranch.html, and a route here is the only
+    thing that keeps the old URL answering. Nothing else in this script would
+    notice if that destination were renamed again, because no page links to a
+    redirect: it exists for the traffic that already has the old address.
+    """
+    path = os.path.join(root, "vercel.json")
+    if not os.path.exists(path):
+        failures.append("no vercel.json")
+        return
+    try:
+        with open(path, encoding="utf-8") as handle:
+            config = json.load(handle)
+    except ValueError as exc:
+        failures.append("vercel.json does not parse: %s" % exc)
+        return
+
+    for route in config.get("routes", []):
+        location = (route.get("headers") or {}).get("Location")
+        if not location:
+            continue
+        src = route.get("src", "")
+
+        status = route.get("status")
+        if status not in REDIRECT_STATUSES:
+            failures.append(
+                "vercel.json sends %s to %s under status %r, which is not a"
+                " redirect" % (src, location, status)
+            )
+
+        target = local_target(location) if location.startswith("http") else location.lstrip("/")
+        if target is None:
+            failures.append(
+                "vercel.json redirects %s off this site, to %s" % (src, location))
+        else:
+            if target.endswith("/") or not target:
+                target += "index.html"
+            if not os.path.exists(os.path.join(root, target)):
+                failures.append(
+                    "vercel.json redirects %s to %s, which is not a file in this"
+                    " repository" % (src, location)
+                )
+
+        # Routes are matched before `handle: filesystem`, so a redirect whose
+        # source is also a real page serves the redirect and never the page.
+        literal = literal_src(src)
+        if literal and os.path.exists(os.path.join(root, literal.lstrip("/"))):
+            failures.append(
+                "vercel.json redirects %s away, but %s exists in the tree and"
+                " the route is matched before the filesystem" % (src, literal.lstrip("/"))
+            )
+
+
 def check_robots(root, failures):
     path = os.path.join(root, "robots.txt")
     if not os.path.exists(path):
@@ -452,6 +533,7 @@ def main(argv=None):
 
     check_sitemap(root, pages_rel, failures)
     check_robots(root, failures)
+    check_redirects(root, failures)
     check_nothing_is_published_by_accident(root, failures)
 
     print("%d page(s): %s" % (len(pages_rel), ", ".join(pages_rel)))

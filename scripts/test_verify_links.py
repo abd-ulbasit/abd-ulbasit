@@ -225,6 +225,26 @@ class SitemapAndRobots(CheckerCase):
         self.assertFails("robots.txt does not point at")
 
 
+class RedirectsThatStoppedLanding(CheckerCase):
+    """work/pgbranch.html -> work/pgoverlay.html is held up by vercel.json alone.
+
+    No page links to the old path, so none of the link checks above cover it.
+    These are the three ways that route can stop being true.
+    """
+
+    def test_redirect_to_a_page_that_moved_again(self):
+        self.edit("vercel.json", '"/work/pgoverlay.html"', '"/work/pgoverlay-v3.html"')
+        self.assertFails("which is not a file in this repository")
+
+    def test_redirect_shadowing_a_page_that_came_back(self):
+        shutil.copy(self.path("work/pgoverlay.html"), self.path("work/pgbranch.html"))
+        self.assertFails("the route is matched before the filesystem")
+
+    def test_redirect_filed_under_a_status_that_does_not_redirect(self):
+        self.edit("vercel.json", '"status": 308', '"status": 200')
+        self.assertFails("which is not a redirect")
+
+
 class NothingPublishedByAccident(CheckerCase):
     def test_a_source_file_no_rule_covers(self):
         # *.toml is not in .vercelignore, so this one would be a public URL.
