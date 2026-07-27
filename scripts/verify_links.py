@@ -34,6 +34,9 @@ Checks, in increasing order of how much they actually prove:
      tags that named the apex while the server redirects to www, and shares
      that unfurled as text because no image was ever declared.
   6. sitemap.xml lists every page and nothing else, and robots.txt points at it.
+  7. No source file in the tree is missing from .vercelignore. The repository
+     root is the web root, so a .md or .py added here is a public URL by
+     default; this is that being caught by CI rather than by a reader.
 
 Links to this site's own URLs are resolved against the working tree, not
 fetched. Fetching them would make a push race the deploy that satisfies it, and
@@ -84,6 +87,14 @@ BLOB = re.compile(r"^https://github\.com/([^/]+)/([^/]+)/blob/([^/]+)/(.+?)(?:#(
 
 SITEMAP_NS = "{http://www.sitemaps.org/schemas/sitemap/0.9}"
 IGNORED_SCHEMES = ("mailto:", "tel:", "javascript:", "data:")
+
+# Extensions that mean "source, not a page". The web root is the repository
+# root, so a file with one of these is a public URL unless .vercelignore keeps
+# it out of the deployment. This list is what stops the next one being noticed
+# by whoever notices it rather than by CI.
+SOURCE_SUFFIXES = (".md", ".py", ".yaml", ".yml", ".sh", ".bash", ".zsh",
+                   ".toml", ".ini", ".cfg", ".lock", ".env", ".sql", ".go",
+                   ".rs", ".rb", ".pl")
 
 
 # --------------------------------------------------------------------------
@@ -330,6 +341,64 @@ def check_sitemap(root, pages_rel, failures):
         failures.append("sitemap.xml lists %s, which is not a page in this repository" % url)
 
 
+def vercelignore_rules(root, failures):
+    """The exclusion rules, read from .vercelignore rather than restated here.
+
+    Understands the two forms the file uses: `dir/` and `*.ext`. Anything else
+    is reported rather than ignored, because a rule this check silently fails
+    to understand is worse than no check.
+    """
+    path = os.path.join(root, ".vercelignore")
+    if not os.path.exists(path):
+        failures.append(
+            "no .vercelignore: vercel.json can only relabel a source file 404,"
+            " it still serves the body"
+        )
+        return [], []
+    dirs, globs = [], []
+    with open(path, encoding="utf-8") as handle:
+        for raw in handle:
+            line = raw.strip()
+            if not line or line.startswith("#"):
+                continue
+            if line.endswith("/"):
+                dirs.append(line.rstrip("/"))
+            elif line.startswith("*."):
+                globs.append(line[1:])
+            else:
+                failures.append(
+                    ".vercelignore rule %r is a form this check cannot read;"
+                    " use dir/ or *.ext, or teach vercelignore_rules()" % line
+                )
+    return dirs, globs
+
+
+def check_nothing_is_published_by_accident(root, failures):
+    """Every source file in the tree has to be excluded from the deployment.
+
+    Only the visible tree is walked. Dot-directories are skipped: .git and
+    .github are never uploaded and .playwright-mcp is gitignored, so a file in
+    one of them is not a URL to begin with.
+    """
+    dirs, globs = vercelignore_rules(root, failures)
+    for dirpath, dirnames, filenames in os.walk(root):
+        dirnames[:] = sorted(d for d in dirnames if not d.startswith("."))
+        for name in sorted(filenames):
+            rel = os.path.relpath(os.path.join(dirpath, name), root)
+            rel = rel.replace(os.sep, "/")
+            if not rel.endswith(SOURCE_SUFFIXES):
+                continue
+            parts = rel.split("/")[:-1]
+            if any(part in dirs for part in parts):
+                continue
+            if any(rel.endswith(suffix) for suffix in globs):
+                continue
+            failures.append(
+                "%s is served at %s and .vercelignore does not exclude it" % (
+                    rel, SITE + "/" + rel)
+            )
+
+
 def check_robots(root, failures):
     path = os.path.join(root, "robots.txt")
     if not os.path.exists(path):
@@ -383,6 +452,7 @@ def main(argv=None):
 
     check_sitemap(root, pages_rel, failures)
     check_robots(root, failures)
+    check_nothing_is_published_by_accident(root, failures)
 
     print("%d page(s): %s" % (len(pages_rel), ", ".join(pages_rel)))
     print("%d third-party link(s) in README.md and those pages:" % len(external))

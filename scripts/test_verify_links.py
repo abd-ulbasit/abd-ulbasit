@@ -224,5 +224,29 @@ class SitemapAndRobots(CheckerCase):
         self.assertFails("robots.txt does not point at")
 
 
+class NothingPublishedByAccident(CheckerCase):
+    def test_a_source_file_no_rule_covers(self):
+        # *.toml is not in .vercelignore, so this one would be a public URL.
+        with open(self.path("pyproject.toml"), "w", encoding="utf-8") as handle:
+            handle.write("[tool.whatever]\n")
+        self.assertFails(".vercelignore does not exclude it")
+
+    def test_source_file_in_a_new_directory(self):
+        os.mkdir(self.path("notes"))
+        with open(self.path("notes/plan.sql"), "w", encoding="utf-8") as handle:
+            handle.write("select 1;\n")
+        self.assertFails("notes/plan.sql is served at")
+
+    def test_no_vercelignore_at_all(self):
+        os.remove(self.path(".vercelignore"))
+        self.assertFails("no .vercelignore")
+
+    def test_a_rule_form_the_check_cannot_read_is_not_accepted_silently(self):
+        # Naming one file is the patch that this whole check exists to replace.
+        with open(self.path(".vercelignore"), "a", encoding="utf-8") as handle:
+            handle.write("posts/DRAFT.md\n")
+        self.assertFails("is a form this check cannot read")
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
