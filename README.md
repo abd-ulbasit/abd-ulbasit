@@ -52,8 +52,9 @@ instead. An idle counter is cheaper than a protocol-visible correctness bug.
 
 ## Eight milliseconds on the GPU, 2,400 Python calls around it
 
-A real-time inference service took 2.8 s per request while the GPU sat at 0 to
-13% utilisation. Inference itself was 8 ms per model, and around each of those
+A real-time inference service took 2.8 s per request while GPU utilisation sat
+between 0 and 13% under normal load, reaching 83% only at 150 concurrent users.
+Inference itself was 8 ms per model, and around each of those
 8 ms were roughly 2,400 Python function calls. A bigger GPU makes the 8 ms
 smaller and does nothing at all to the rest, which is why buying hardware had
 not helped: the ceiling was a single Python process, not the accelerator.
