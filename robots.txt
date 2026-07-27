@@ -1,0 +1,11 @@
+# The repository root is the web root, so source files that were never meant
+# to be pages exist at URLs. vercel.json now answers those with 404; this file
+# says the same thing to anything that crawled them before the rule existed.
+
+User-agent: *
+Allow: /
+Disallow: /scripts/
+Disallow: /.github/
+Disallow: /*.md$
+
+Sitemap: https://www.basit.engineer/sitemap.xml

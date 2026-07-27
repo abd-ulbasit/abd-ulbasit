@@ -69,7 +69,7 @@ Some of this is still wrong. I do not know which part yet.
 [steward][steward] · [sluice][sluice] · [forgepoint][forgepoint] ·
 [Kubernetes guide][guide]
 
-[site]: https://basit.engineer
+[site]: https://www.basit.engineer
 [pgbranch]: https://github.com/abd-ulbasit/pgbranch
 [goqueue]: https://github.com/abd-ulbasit/goqueue
 [sluice]: https://github.com/abd-ulbasit/sluice

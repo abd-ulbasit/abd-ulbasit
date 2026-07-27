@@ -11,7 +11,10 @@
       content="Branching a 5 GiB Postgres database took 61.9 s and left a 5.05 GiB writable layer. The cause was Postgres opening every file read-write before WAL replay, and OverlayFS answering that with a full copy-up."
     />
     <meta property="og:type" content="article" />
-    <meta property="og:url" content="https://basit.engineer/work/pgbranch.html" />
+    <meta
+      property="og:url"
+      content="https://www.basit.engineer/work/pgbranch.html"
+    />
     <meta
       property="og:title"
       content="A copy-on-write system that copied everything"
@@ -20,10 +23,23 @@
       property="og:description"
       content="61.9 s and a 5.05 GiB writable layer to branch a 5 GiB database. The diagnosis: SyncDataDirectory opens every file O_RDWR, and on OverlayFS that forces a full copy-up."
     />
+    <meta
+      property="og:image"
+      content="https://www.basit.engineer/assets/og-card.png"
+    />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta
+      property="og:image:alt"
+      content="Abdul Basit Sajid, backend and infrastructure engineer, basit.engineer"
+    />
+    <meta name="twitter:card" content="summary_large_image" />
     <link
       rel="canonical"
-      href="https://basit.engineer/work/pgbranch.html"
+      href="https://www.basit.engineer/work/pgbranch.html"
     />
+    <link rel="icon" href="/favicon.ico" sizes="any" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="stylesheet" href="../style.css" />
   </head>
   <body>

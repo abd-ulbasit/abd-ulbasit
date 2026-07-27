@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Every URL here uses www, because basit.engineer 308s to www.basit.engineer
+  and a sitemap that lists the pre-redirect host makes a crawler prove that
+  for itself on every entry.
+
+  No <lastmod>. It is optional, it would be maintained by hand, and a date
+  that quietly stops being true is worse than no date at all.
+
+  scripts/verify_links.py checks that this file lists every HTML page in the
+  repository and nothing that is not one.
+-->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://www.basit.engineer/</loc>
+  </url>
+  <url>
+    <loc>https://www.basit.engineer/work/real-time-inference.html</loc>
+  </url>
+  <url>
+    <loc>https://www.basit.engineer/work/pgbranch.html</loc>
+  </url>
+  <url>
+    <loc>https://www.basit.engineer/posts/postgres-copied-5gb-before-recovery-started.html</loc>
+  </url>
+</urlset>
