@@ -4,11 +4,11 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>
-      The GPU was idle and we could serve two people · Abdul Basit Sajid
+      Eight milliseconds on the GPU, 2,400 Python calls around it · Abdul Basit Sajid
     </title>
     <meta
       name="description"
-      content="A real-time GPU inference backend that fell over at three concurrent users while the GPU sat at 0–13% utilisation. The ceiling was the Python GIL. Proved to 700 concurrent under load test at 99.4% delivery."
+      content="A real-time GPU inference backend whose p50 exploded while the GPU sat at 0–13% utilisation. The ceiling was the Python GIL, not the hardware. Proved to a 500-concurrent ceiling under load test."
     />
     <meta property="og:type" content="article" />
     <meta
@@ -17,11 +17,11 @@
     />
     <meta
       property="og:title"
-      content="The GPU was idle and we could serve two people"
+      content="Eight milliseconds on the GPU, 2,400 Python calls around it"
     />
     <meta
       property="og:description"
-      content="0–13% GPU utilisation, a hard ceiling at three concurrent users, and three of my own hypotheses falsified before the real one survived."
+      content="0–13% GPU utilisation while latency collapsed, and three of my own hypotheses falsified before the real one survived."
     />
     <link
       rel="canonical"
@@ -36,12 +36,11 @@
 
       <header>
         <span class="step">the inference backend · EliteITTeam · case study</span>
-        <h1>The GPU was idle and we could serve two people</h1>
+        <h1>Eight milliseconds on the GPU, 2,400 Python calls around it</h1>
         <p class="tagline">
-          A real-time inference backend on a rented GPU, falling over at three
-          concurrent users while the GPU it was rented for sat between 0 and 13%
-          utilised. Everything I assumed about that was wrong, and the
-          measurement said so before I did.
+          A real-time inference backend that could not be scaled by buying the
+          thing it appeared to need. Everything I assumed about that was wrong,
+          and the measurement said so before I did.
         </p>
         <p class="meta">
           Python · real-time inference · GPU · load testing · closed source
@@ -53,10 +52,10 @@
           <h2>The problem</h2>
           <p>
             A marketing campaign needed a real-time inference service to hold up
-            in front of a live audience. What we had held up in front of about
-            three people. Beyond that, p50 latency climbed until the experience
-            stopped being real-time in any sense a user would recognise, and
-            single-request inference itself was taking roughly 2.8 seconds.
+            in front of a live audience, at a scale the existing one could not
+            reach. Single-request inference was taking roughly 2.8 seconds, and
+            p50 latency climbed with concurrency until the experience stopped
+            being real-time in any sense a user would recognise.
           </p>
           <p>
             The instinct in the room, mine included, was that a GPU workload
@@ -86,14 +85,17 @@
           </p>
           <div class="note">
             <p>
-              While p50 latency was climbing to the point of collapse, GPU
-              utilisation was sitting between <strong>0% and 13%</strong>.
+              Under normal load, GPU utilisation sat between
+              <strong>0% and 13%</strong>, reaching 83% only at 150 users. Raw
+              inference was <strong>8 ms per model</strong>. Around each of
+              those 8 ms sat roughly <strong>2,400 Python function calls</strong>
+              of preprocessing and postprocessing.
             </p>
             <p>
-              A saturated GPU is what a GPU bottleneck looks like. An idle one
-              is what a GPU bottleneck cannot look like. Whatever the ceiling
-              was, we would not have moved it by buying more of the resource
-              that was already doing nothing.
+              That ratio is the diagnosis. The accelerator was doing a
+              rounding error's worth of the wall-clock time, and the work
+              wrapped around it could only ever run one thread at a time. Buying
+              a bigger GPU makes the 8 ms smaller. It does nothing to the rest.
             </p>
           </div>
         </section>
@@ -145,9 +147,14 @@
               </thead>
               <tbody>
                 <tr>
-                  <th scope="row">Concurrent users (load test)</th>
-                  <td class="num">3</td>
-                  <td class="num">700</td>
+                  <th scope="row">Concurrent users, one GPU (load test)</th>
+                  <td class="num">~150</td>
+                  <td class="num">~200</td>
+                </tr>
+                <tr>
+                  <th scope="row">Concurrent users, four GPUs (load test)</th>
+                  <td class="num">n/a</td>
+                  <td class="num">500</td>
                 </tr>
                 <tr>
                   <th scope="row">Inference</th>
@@ -163,11 +170,19 @@
             </table>
           </div>
           <p>
-            At 700 concurrent the system held <strong>99.4% delivery</strong> at
-            <strong>$0.0106 per user-hour</strong>. The entire campaign cost
-            about <strong>$25</strong> to run. That turned the original question
-            from a capacity problem into a rounding error, without buying a
-            single additional GPU.
+            The comfortable ceiling is <strong>500 concurrent</strong> at 97.9%
+            delivery and 259 ms p50, about $0.015 per user-hour. The
+            best-tuned configuration reached <strong>700 at 99.4%</strong> and
+            132 ms, at $0.0106 per user-hour, but 800 collapses to 87.7%, so 500
+            is the number I would plan against. The whole campaign cost about
+            <strong>$25</strong> to run.
+          </p>
+          <p>
+            Being precise about where the capacity came from: moving from one
+            L40S to four accounts for a 2.5&times; jump on its own. My work is
+            the latency column and the reason four GPUs could be used at all.
+            Before the fan-out and pinning fixes, adding hardware did not help,
+            because the constraint was a single Python process, not the GPU.
           </p>
         </section>
 
@@ -175,15 +190,16 @@
           <h2>What I will not claim about this</h2>
           <div class="note">
             <p>
-              <strong>700 is proved capacity, not served load.</strong> It is a
+              <strong>500 is proved capacity, not served load.</strong> It is a
               load-test figure. Actual production peak on this system was 147
               concurrent users. I am confident about the ceiling because the
               test was built to find it, but a load generator is not an
               audience: it has no think time, no unusual clients, no
               pathological network, and none of the ways real traffic is
               creative. The honest statement is that we proved headroom of
-              roughly 4.7× over what we ever actually saw, and then never needed
-              it.
+              roughly 3.4× over what we ever actually saw, and then never needed
+              it. And part of that headroom was bought with three extra GPUs,
+              not earned with code.
             </p>
           </div>
           <p>

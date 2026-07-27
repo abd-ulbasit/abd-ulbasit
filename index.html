@@ -6,7 +6,7 @@
     <title>Abdul Basit Sajid · backend &amp; infrastructure engineer</title>
     <meta
       name="description"
-      content="Backend and infrastructure engineer. Go, Postgres, Kubernetes. Took a real-time GPU inference backend from 3 to 700 concurrent users under load test, where the GPU was never the bottleneck."
+      content="Backend and infrastructure engineer. Go, Postgres, Kubernetes. Moved a real-time GPU inference backend from about 150 concurrent users to a measured 500-user ceiling, where the GPU was never the bottleneck."
     />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://basit.engineer/" />
@@ -16,7 +16,7 @@
     />
     <meta
       property="og:description"
-      content="Go, Postgres, Kubernetes. 3 to 700 concurrent users under load test on a GPU inference backend. The GPU was never the bottleneck."
+      content="Go, Postgres, Kubernetes. A GPU inference backend taken from about 150 concurrent users to a measured 500-user ceiling. The GPU was never the bottleneck."
     />
     <meta name="twitter:card" content="summary" />
     <link rel="canonical" href="https://basit.engineer/" />
@@ -38,11 +38,11 @@
           Three years in, remote for
           <a href="https://www.eliteitteam.com/" rel="noopener">EliteITTeam</a>
           (Manchester, UK) from Pakistan. The work I would point at first is a
-          real-time GPU inference backend I took from three concurrent users to
-          700 under load test, where the finding that mattered was that the GPU
-          had never been the bottleneck. The second is a capacity analysis where
-          the correct recommendation turned out to be that we not build the
-          system at all.
+          real-time GPU inference backend whose ceiling I moved from about 150
+          concurrent users to a measured 500, where the finding that mattered
+          was that the GPU had never been the bottleneck. The second is a
+          capacity analysis where the correct recommendation turned out to be
+          that we not build the system at all.
         </p>
 
         <section aria-labelledby="numbers">
@@ -50,13 +50,15 @@
           <ul class="metrics">
             <li>
               <span class="figure">
-                <span class="from">3</span><span class="arrow">→</span>700
+                <span class="from">~150</span><span class="arrow">→</span>500
                 concurrent users
               </span>
               <p>
-                Real-time GPU inference backend, proved under load test at 99.4%
-                delivery and $0.0106 per user-hour. GPU utilisation sat at 0–13%
-                the whole time. The ceiling was the Python GIL.
+                Real-time GPU inference backend. A comfortable ceiling of 500 at
+                97.9% delivery, and 700 at 99.4% on the best-tuned
+                configuration, measured on a four-GPU box. GPU utilisation sat
+                at 0&ndash;13% the whole time: the ceiling was the Python GIL,
+                not the hardware.
                 <a href="work/real-time-inference.html">How that was found →</a>
               </p>
             </li>
@@ -231,7 +233,7 @@
               <span class="name">Real-time inference backend</span
               ><span class="tag">EliteITTeam</span>
               <p>
-                3 → 700 concurrent users under load test; 2,800 ms → 60 ms
+                ~150 → 500 concurrent users under load test; 2,800 ms → 60 ms
                 inference; 871 ms → 59 ms p50 once a <code>broadcast=True</code>
                 fan-out was removed. Three of my own hypotheses were falsified
                 along the way.
