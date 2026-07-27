@@ -1,0 +1,83 @@
+name: Verify README links
+
+# Replaces the old "README build" workflow, which regenerated an SVG stats card
+# every night and pushed it back to master. That job wrote 34 of this
+# repository's first 65 commits. This one writes nothing to the repository: it
+# checks the README's links and opens an issue when one rots.
+#
+# On the 60-day auto-disable: GitHub disables scheduled workflows in
+# repositories with no activity for 60 days, and pushes made by a bot with the
+# default GITHUB_TOKEN do not reset that clock. The old nightly job papered
+# over this by pushing constantly; this one runs monthly and may well be
+# switched off during a quiet stretch.
+#
+# That is an acceptable failure, and the reason to prefer this shape. When the
+# generator died the README kept rendering stale numbers as though they were
+# current. When this checker dies, the README stays exactly as it was last
+# written by hand, and nothing starts lying. Re-enable it from the Actions tab,
+# or run it on demand with workflow_dispatch.
+
+on:
+  schedule:
+    - cron: "0 6 1 * *"
+  workflow_dispatch:
+  push:
+    branches: [master]
+    paths:
+      - README.md
+      - scripts/verify_links.py
+      - .github/workflows/verify.yaml
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: verify-readme-links
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Check every link, pinned line and anchor
+        id: check
+        run: |
+          set +e
+          python scripts/verify_links.py 2>&1 | tee report.txt
+          echo "status=${PIPESTATUS[0]}" >> "$GITHUB_OUTPUT"
+
+      # One open issue at a time. A monthly job that files a fresh issue for the
+      # same dead link twelve times a year trains you to ignore it.
+      - name: Report rot
+        if: steps.check.outputs.status != '0'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          {
+            echo "\`scripts/verify_links.py\` failed. The profile README is making a claim that no longer resolves."
+            echo
+            echo '```'
+            cat report.txt
+            echo '```'
+            echo
+            echo "[Run log]($RUN_URL)"
+          } > body.md
+
+          existing=$(gh issue list --state open --label link-rot --limit 1 --json number --jq '.[0].number // empty')
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --body-file body.md
+          else
+            gh label create link-rot --color B60205 --description "A README link, pinned line or anchor stopped resolving" 2>/dev/null || true
+            gh issue create --title "README link check failed" --label link-rot --body-file body.md
+          fi
+
+          exit 1
