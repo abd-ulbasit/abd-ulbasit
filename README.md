@@ -59,7 +59,7 @@ Inference itself was 8 ms per model, and around each of those
 smaller and does nothing at all to the rest, which is why buying hardware had
 not helped: the ceiling was a single Python process, not the accelerator.
 Fixing the fan-out is what made four GPUs usable in the first place. Proved to
-500 concurrent under load test, against a production peak of 147.
+500 concurrent under load test, on four L40Ses.
 
 ---
 

@@ -198,8 +198,7 @@
             delivery and 259 ms p50, about $0.015 per user-hour. The
             best-tuned configuration reached <strong>700 at 99.4%</strong> and
             132 ms, at $0.0106 per user-hour, but 800 collapses to 87.7%, so 500
-            is the number I would plan against. The whole campaign cost about
-            <strong>$25</strong> to run.
+            is the number I would plan against.
           </p>
           <p>
             That 500 to 700 is worth separating out, because no hardware
@@ -232,14 +231,13 @@
           <div class="note">
             <p>
               <strong>500 is proved capacity, not served load.</strong> It is a
-              load-test figure. Actual production peak on this system was 147
-              concurrent users. I am confident about the ceiling because the
-              test was built to find it, but a load generator is not an
-              audience: it has no think time, no unusual clients, no
-              pathological network, and none of the ways real traffic is
-              creative. The honest statement is that we proved headroom of
-              roughly 3.4× over what we ever actually saw, and then never needed
-              it. Part of that headroom was bought with three extra GPUs, and
+              load-test figure, and production never rose to meet it. I am
+              confident about the ceiling because the test was built to find it,
+              but a load generator is not an audience: it has no think time, no
+              unusual clients, no pathological network, and none of the ways
+              real traffic is creative. The honest statement is that we proved
+              headroom and then never needed it. Part of that headroom was
+              bought with three extra GPUs, and
               part of the baseline gap is an L4 against an L40S rather than
               anything I wrote: at constant code that swap alone is worth
               roughly 150 users to 200. The hardware was necessary: a single L40S with
