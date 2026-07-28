@@ -345,6 +345,20 @@ td.num {
   text-align: right;
 }
 
+/* Hardware qualifier under a row label. The before and after columns of the
+   inference table are not the same machine, so each row names its GPU rather
+   than leaving the reader to assume the hardware was held constant. */
+th .sub {
+  display: block;
+  margin-top: 0.15rem;
+  font-family: var(--font-sans);
+  font-size: 0.72rem;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  text-transform: none;
+  color: var(--ink-3);
+}
+
 /* ---------- case-study page furniture ---------- */
 
 .back {

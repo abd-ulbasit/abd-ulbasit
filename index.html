@@ -6,7 +6,7 @@
     <title>Abdul Basit Sajid · backend &amp; infrastructure engineer</title>
     <meta
       name="description"
-      content="Backend and infrastructure engineer. Go, Postgres, Kubernetes. Took a real-time GPU inference backend from a ~150-user ceiling on one GPU to a load-tested 500 on four, after finding the constraint was the Python GIL and not the hardware."
+      content="Backend and infrastructure engineer. Go, Postgres, Kubernetes. Took a real-time GPU inference backend from a ~120-user ceiling on one L4 to a load-tested 500 on four L40Ses, after finding the constraint was the Python GIL and not the hardware."
     />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://www.basit.engineer/" />
@@ -16,7 +16,7 @@
     />
     <meta
       property="og:description"
-      content="Go, Postgres, Kubernetes. A GPU inference backend taken from a ~150-user ceiling on one GPU to a load-tested 500 on four. The constraint was the Python GIL, not the hardware."
+      content="Go, Postgres, Kubernetes. A GPU inference backend taken from a ~120-user ceiling on one L4 to a load-tested 500 on four L40Ses. The constraint was the Python GIL, not the hardware."
     />
     <meta
       property="og:image"
@@ -50,9 +50,9 @@
           Three years in, remote for
           <a href="https://www.eliteitteam.com/" rel="noopener">EliteITTeam</a>
           (Manchester, UK) from Pakistan. The work I would point at first is a
-          real-time GPU inference backend that went from a ~150-user ceiling on
-          one GPU to a load-tested 500 on four, where the finding that mattered
-          was that the constraint had never been the hardware. The second is a
+          real-time GPU inference backend that went from a ~120-user ceiling on
+          one L4 to a load-tested 500 on four L40Ses, where the finding that
+          mattered was that the constraint had never been the hardware. The second is a
           capacity analysis where the correct recommendation turned out to be
           that we not build the system at all.
         </p>
@@ -62,15 +62,16 @@
           <ul class="metrics">
             <li>
               <span class="figure">
-                <span class="from">~150</span><span class="arrow">→</span>500
+                <span class="from">~120</span><span class="arrow">→</span>500
                 concurrent users
               </span>
               <p>
-                Real-time GPU inference backend. A comfortable ceiling of 500 at
-                97.9% delivery, and 700 at 99.4% on the best-tuned
-                configuration, measured on a four-GPU box. GPU utilisation sat
-                at 0&ndash;13% under normal load, reaching 83% only at 150 users:
-                the ceiling was the Python GIL, not the hardware.
+                Real-time GPU inference backend, one L4 to four L40Ses. A
+                comfortable ceiling of 500 at 97.9% delivery, and 700 at 99.4%
+                on the same four GPUs at a higher container density. GPU
+                utilisation sat at 0&ndash;13% under normal load, reaching 83%
+                only at 150 users: the ceiling was the Python GIL, not the
+                hardware.
                 <a href="work/real-time-inference.html">How that was found →</a>
               </p>
             </li>
@@ -250,10 +251,10 @@
               <span class="name">Real-time inference backend</span
               ><span class="tag">EliteITTeam</span>
               <p>
-                ~150 → 500 concurrent users under load test; 2,800 ms → 60 ms
-                inference; 871 ms → 59 ms p50 once a <code>broadcast=True</code>
-                fan-out was removed. Three of my own hypotheses were falsified
-                along the way.
+                ~120 on one L4 → 500 on four L40Ses under load test; 2,800 ms →
+                60 ms inference; 871 ms → 59 ms p50 once a
+                <code>broadcast=True</code> fan-out was removed. Three of my own
+                hypotheses were falsified along the way.
               </p>
               <div class="links">
                 <a href="work/real-time-inference.html">case study</a>

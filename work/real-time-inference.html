@@ -148,8 +148,10 @@
             <table>
               <caption>
                 Measured on the campaign configuration. Concurrency and delivery
-                rate come from load testing, not from production traffic. See
-                the caveat below; it matters.
+                rate come from load testing, not from production traffic. The
+                baseline and the result also run on different hardware, so the
+                GPU is named on every row rather than left implied. See the
+                caveat below; it matters.
               </caption>
               <thead>
                 <tr>
@@ -160,14 +162,23 @@
               </thead>
               <tbody>
                 <tr>
-                  <th scope="row">Concurrent users, one GPU (load test)</th>
-                  <td class="num">~150</td>
-                  <td class="num">~200</td>
+                  <th scope="row">
+                    Concurrent users (load test)<br />
+                    <span class="sub"
+                      >GCP 1&times; L4, one process &rarr; AWS 4&times; L40S, 48
+                      containers</span
+                    >
+                  </th>
+                  <td class="num">~120</td>
+                  <td class="num">500</td>
                 </tr>
                 <tr>
-                  <th scope="row">Concurrent users, four GPUs (load test)</th>
+                  <th scope="row">
+                    Best-tuned density (load test)<br />
+                    <span class="sub">same 4&times; L40S, 80 containers</span>
+                  </th>
                   <td class="num">n/a</td>
-                  <td class="num">500</td>
+                  <td class="num">700</td>
                 </tr>
                 <tr>
                   <th scope="row">Inference</th>
@@ -191,11 +202,28 @@
             <strong>$25</strong> to run.
           </p>
           <p>
-            Being precise about where the capacity came from: moving from one
-            L40S to four accounts for a 2.5&times; jump on its own. My work is
-            the latency column and the reason four GPUs could be used at all.
-            Before the fan-out and pinning fixes, adding hardware did not help,
-            because the constraint was a single Python process, not the GPU.
+            That 500 to 700 is worth separating out, because no hardware
+            changed. It is the same box and the same four L40Ses, run at a
+            different container density: 48 containers gives 700 at 98.6% and
+            245 ms, 64 gives 94.4%, and 80 gives <strong>99.4% at 132 ms</strong>.
+            Same GPUs, same code, better packing.
+          </p>
+          <p>
+            Being precise about where the capacity came from, because the
+            before and after are not the same machine. The baseline was a GCP
+            L4 running one Python process behind 32 gunicorn workers: about 120
+            users at 99% delivery, 871&ndash;1215 ms p50. The result is an AWS
+            box with four L40Ses.
+          </p>
+          <p>
+            The chip is the smallest part of it. Holding the fixed architecture
+            constant and varying only the GPU, one L4 carries about 150 users
+            and one L40S about 200, which is 1.78&times; the throughput
+            (84 to 150 fps) and well under the 3&times; the spec sheets imply
+            for this workload. Going from one L40S to four accounts for a
+            2.5&times; jump. The rest is the code: before the fan-out and
+            pinning fixes, adding hardware did not help at all, because the
+            constraint was a single Python process, not the GPU.
           </p>
         </section>
 
@@ -211,8 +239,15 @@
               pathological network, and none of the ways real traffic is
               creative. The honest statement is that we proved headroom of
               roughly 3.4× over what we ever actually saw, and then never needed
-              it. And part of that headroom was bought with three extra GPUs,
-              not earned with code.
+              it. Part of that headroom was bought with three extra GPUs, and
+              part of the baseline gap is an L4 against an L40S rather than
+              anything I wrote: at constant code that swap alone is worth
+              roughly 150 users to 200. The hardware was necessary: a single L40S with
+              more vCPU and more RAM was tested at 500 users and delivered
+              8.2%. It was not sufficient either, which is the whole point of
+              the case: four GPUs behind one Python process would have idled
+              the way one did. And the last stretch, 500 to 700, came from
+              container density on unchanged hardware.
             </p>
           </div>
           <p>
