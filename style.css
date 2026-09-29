@@ -59,6 +59,12 @@ body {
   max-width: 47rem;
   margin: 0 auto;
   padding: 4.5rem 0 5rem;
+  /* WebKit fills the gaps of a selection that crosses blocks out to the
+     nearest selection root, which was <body>, so selecting across two
+     paragraphs in Safari painted a band the full width of the window.
+     A positioned block is a selection root, so the band now stops at the
+     column. Nothing inside is positioned against it: .skip sits outside. */
+  position: relative;
 }
 
 /* ---------- links ---------- */
