@@ -8,6 +8,11 @@
       "status": 308,
       "headers": { "Location": "/work/pgoverlay.html" }
     },
+    {
+      "src": "^/posts/postgres-copied-5gb-before-recovery-started\\.html$",
+      "status": 308,
+      "headers": { "Location": "/posts/a-select-copied-the-whole-table.html" }
+    },
     { "handle": "filesystem" }
   ]
 }

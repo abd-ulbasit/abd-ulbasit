@@ -113,8 +113,8 @@
                 built on OverlayFS: every branch shares one read-only base and
                 stores only its own changes. Branching a 5 GiB database took
                 61.9 s and left a 5.05 GiB writable layer inside a system whose
-                premise is that it copies nothing; it now takes 1.9 s and 33
-                MiB.
+                premise is that it copies nothing; the fix took it to 1.9 s and
+                33 MiB. v1.0.0 then stopped reads from copying tables too.
               </p>
               <div class="links">
                 <a href="https://github.com/abd-ulbasit/pgoverlay" rel="noopener"
@@ -277,22 +277,16 @@
           <h2 id="writing">Writing</h2>
           <ul class="rows">
             <li>
-              <span class="name"
-                >Postgres copied 5 GiB before recovery started</span
-              >
+              <span class="name">A SELECT copied the whole table</span>
               <p>
-                A copy-on-write branching benchmark that reported a full copy.
-                OverlayFS copies a file up when it is opened read-write, and
-                Postgres opens every file in the data directory read-write to
-                fsync it before WAL replay. The durability pass therefore copied
-                the whole dataset before a single query ran. Includes the
-                measurement that exposed it and the limitation the fix does not
-                remove.
+                A copy-on-write Postgres branch that copied every table it read.
+                Postgres opens table files read-write even for a
+                <code>SELECT</code>, and OverlayFS copies a file up the moment it
+                is opened read-write. How pgoverlay v1.0.0 stopped it, and
+                the options measured and rejected on the way.
               </p>
               <div class="links">
-                <a href="posts/postgres-copied-5gb-before-recovery-started.html"
-                  >Read</a
-                >
+                <a href="posts/a-select-copied-the-whole-table.html">Read</a>
               </div>
             </li>
           </ul>
