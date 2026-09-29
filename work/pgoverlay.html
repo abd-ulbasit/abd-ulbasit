@@ -184,10 +184,12 @@
             durability argument is that this is a <em>superset</em> of what the
             per-file pass covers. The property the pass exists to establish
             still holds, so crash-recovery semantics are unchanged. What it
-            costs is specificity: <code>syncfs</code> can surface I/O errors
-            belonging to unrelated files on the same filesystem. In this design
-            a branch's filesystem is its own disposable overlay mount holding
-            nothing else, so that class of noise has nothing to be noisy about.
+            costs is specificity: <code>syncfs</code> flushes the whole
+            filesystem under the branch, and on a Docker host that filesystem
+            is shared with every other branch and container, so it costs extra
+            flush time when they write a lot. I first wrote here that a
+            branch's filesystem held nothing else. The overlay mount is the
+            branch's own; the filesystem under it is not.
           </p>
           <p>
             It is not free. <code>syncfs</code> as a recovery init method is
@@ -254,23 +256,40 @@
               That number is worse and it is published anyway, next to the one
               it replaced. The two are not measuring the same thing, and the
               honest framing is that pgoverlay moved the cost from
-              pay-at-creation to pay-per-file-written. For branches that read a
-              lot and write a little, which is what a pull-request database
-              does, that is strictly better. For a branch that rewrites its
-              entire dataset, it is a wash.
+              pay-at-creation to pay-per-file-written. I claimed that for
+              branches that read a lot and write a little, which is what a
+              pull-request database does, that was strictly better. It was not;
+              see the update below. For a branch that rewrites its entire
+              dataset, it is a wash.
             </p>
           </div>
           <p>
             Two other things I would rather say than have someone find. The
             safety argument for <code>syncfs</code> is an argument: it reasons
             from what the two sync methods guarantee, and it has not been
-            demonstrated with fault injection. And nothing in CI would catch
-            this regression coming back. The fix is protected by a benchmark
-            script that a human has to remember to run, which is exactly the
-            kind of protection that fails silently a year later.
+            demonstrated with fault injection. And when I first wrote this,
+            nothing in CI would have caught this regression coming back: the fix
+            was protected by a benchmark script that a human had to remember to
+            run. That has changed. A unit test fails if the flag leaves the
+            branch entrypoint, and integration tests fail if reads grow a
+            branch.
           </p>
           <p>
-            The repository states outright how much of its commit history was
+            <strong>Update, v1.0.0.</strong> "Pay-per-file-written" was wrong
+            when I wrote it. Postgres opens table files read-write for reads
+            too, so a branch paid for every file it <em>opened</em>: in the
+            review before 1.0, one <code>SELECT count(*)</code> copied a 488.5
+            MiB table into a branch that had only read it. v1.0.0 fixes that
+            with an <code>LD_PRELOAD</code> shim that opens table files
+            read-only until the first write, and makes writes block-level on XFS
+            and btrfs.
+            <a href="../posts/a-select-copied-the-whole-table.html"
+              >The write-up</a
+            >
+            has the measurements.
+          </p>
+          <p>
+            The repository says outright that most of its commit history was
             agent-assisted, and points at the two documents (the benchmark
             record and the deep dives) that required diagnosis rather than
             generation. The benchmark file still contains the pre-fix numbers
@@ -289,7 +308,7 @@
             >
           </li>
           <li>
-            <a href="../posts/postgres-copied-5gb-before-recovery-started.html"
+            <a href="../posts/a-select-copied-the-whole-table.html"
               >The write-up, with the kernel-level detail</a
             >
           </li>
