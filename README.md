@@ -7,23 +7,28 @@ Postgres.
 
 Four times the number was not what it looked like.
 
-## A copy-on-write system copied 5 GiB
+## A copy-on-write system copied what it read
 
-Branching a 5 GiB Postgres database in [pgoverlay][pgoverlay] took 61.9 s and
-left a writable layer the size of the entire dataset. On a system whose whole
-premise is that branches share one base and store only their own changes, that
-is not slowness. That is the copy-on-write not happening.
+[pgoverlay][pgoverlay] gives each pull request its own Postgres branch: a stock
+container whose data directory is an OverlayFS view of one shared seed, meant
+to store only what that branch changes. A branch of a 5 GiB database held
+5.05 GiB before its first query, and one `SELECT count(*)` copied a 488.5 MiB
+table into a branch that had only read it.
 
-The branch's own log said `redo done ... elapsed: 0.00 s`, so the minute went
-somewhere before WAL replay. Before recovery, Postgres fsyncs every file in the
-data directory, and it opens each one `O_RDWR`, because not every platform
-allows `fsync()` on a read-only descriptor. It writes nothing. But OverlayFS
-copies a file up on the open, not on the write, so the durability pass copied
-the whole dataset before a single query ran. After the fix: 1.89 s and 33.1 MiB.
+Same cause both times. Postgres opens files `O_RDWR` even when it only reads
+them: every file in the data directory before WAL replay, because not every
+platform allows `fsync()` on a read-only descriptor, and every table file a
+query touches. OverlayFS copies a file up on the open, not on the write. A
+one-flag control run proved the first (`recovery_init_sync_method=syncfs`:
+16 KiB, not 5.05 GiB). For the second, v1.0.0 preloads a small library that
+opens table files read-only until their first write, so reads copy no table
+data, at a warm pgbench cost of at most 1.6% at the median.
 
-p50 of five runs on a Colima VM (4 vCPU, kernel 6.8, overlay2 on ext4) hosted on
-an M1 Pro, June 2026. The [benchmarks doc][bench] still publishes the pre-fix
-table, and says why the two sets of numbers are not comparable.
+The 5 GiB numbers come from a Colima VM on an M1 Pro (create times are the
+median of five runs), the 488.5 MiB read from Docker on Linux with ext4, and
+the pgbench numbers from GitHub-hosted amd64 and arm64 runners. All of them,
+with their raw runs, are in the [benchmarks doc][bench], and the
+[write-up][post] tells the whole story.
 
 ## The hazard was documented one layer below where it bit me
 
@@ -76,5 +81,6 @@ Some of this is still wrong. I do not know which part yet.
 [steward]: https://github.com/abd-ulbasit/steward
 [forgepoint]: https://github.com/abd-ulbasit/forgepoint
 [guide]: https://github.com/abd-ulbasit/bookstore-kubernetes-guide
-[bench]: https://github.com/abd-ulbasit/pgoverlay/blob/main/docs/benchmarks.md#before-the-fix-branch-creation-scaled-with-data-size
+[bench]: https://github.com/abd-ulbasit/pgoverlay/blob/main/docs/benchmarks.md#true-copy-on-write-v100
+[post]: https://www.basit.engineer/posts/a-select-copied-the-whole-table.html
 [note]: https://github.com/abd-ulbasit/goqueue/blob/beac5b4e727f47f1d991f40774948715542788bf/internal/storage/segment.go#L1121
