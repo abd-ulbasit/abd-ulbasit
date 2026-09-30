@@ -8,7 +8,7 @@
     </title>
     <meta
       name="description"
-      content="Branching a 5 GiB Postgres database took 61.9 s and left a 5.05 GiB writable layer. The cause was Postgres opening every file read-write before WAL replay, and OverlayFS answering that with a full copy-up."
+      content="pgoverlay gives every pull request its own Postgres branch, on OverlayFS by default. Postgres opens files read-write even when it only reads them, and OverlayFS copies a file on that open, so branches kept copying the data they were meant to share. How I found it, measured the options and removed it in v1.0.0."
     />
     <meta property="og:type" content="article" />
     <meta
@@ -21,7 +21,7 @@
     />
     <meta
       property="og:description"
-      content="61.9 s and a 5.05 GiB writable layer to branch a 5 GiB database. The diagnosis: SyncDataDirectory opens every file O_RDWR, and on OverlayFS that forces a full copy-up."
+      content="Postgres opens files read-write even to read them, and OverlayFS copies a file on that open. How I found that twice, measured the options, and removed it in v1.0.0."
     />
     <meta
       property="og:image"
@@ -51,12 +51,14 @@
         <span class="step">pgoverlay · case study</span>
         <h1>A copy-on-write system that copied everything</h1>
         <p class="tagline">
-          The first honest benchmark said branching a 5 GiB database took 61.9
-          seconds and left a 5.05 GiB writable layer behind. That is not a slow
-          path. That is the feature not working.
+          A branch of a 5 GiB database held 5.05 GiB before it ran a query, and
+          a single <code>SELECT</code> copied a 488.5 MiB table into a branch
+          that had only read it. One cause both times: Postgres opens files
+          read-write even to read them, and OverlayFS copies a file whole the
+          moment it is opened that way.
         </p>
         <p class="meta">
-          Go · Postgres · OverlayFS ·
+          Go · Postgres · OverlayFS · Linux ·
           <a href="https://github.com/abd-ulbasit/pgoverlay" rel="noopener"
             >github.com/abd-ulbasit/pgoverlay</a
           >
@@ -68,233 +70,235 @@
           <h2>The problem</h2>
           <p>
             pgoverlay gives you a Postgres database per pull request. You seed
-            one dataset once, and every branch after that is supposed to be an
-            OverlayFS copy-on-write view of it: one read-only base shared by
-            every branch, a writable layer holding only what that branch
-            changes, thrown away without ceremony. The entire value proposition
-            is the copying that does not happen.
+            one dataset once, and on the default backend every branch after
+            that is a stock <code>postgres</code> container whose data directory
+            is an OverlayFS mount (the layered filesystem behind Docker's
+            default image storage): the seed read-only underneath, shared by
+            every branch, and an empty writable layer on top, meant to hold only
+            what that branch changes. The whole design rests on the copying that
+            does not happen.
           </p>
           <p>
-            So the number that mattered was not the 61.9 seconds. It was the
-            writable layer. After creating a branch of a 5.00 GiB database (no
-            queries run, no rows written, nothing but a boot), the branch's
-            writable layer held <strong>5.05 GiB</strong>. The 1 GiB dataset
-            behaved the same way: 1.00 GiB of database, 1.05 GiB of writable
-            layer. Whatever else was happening, the system had made a full
-            physical copy of the data on a code path whose whole purpose is not
-            to.
+            So the number that matters is the size of that writable layer. It
+            decides whether a database per pull request is affordable, and it
+            went wrong twice.
           </p>
         </section>
 
         <section>
-          <h2>The explanation I expected, and why it was wrong</h2>
+          <h2>The first copy: 5 GiB before a single query</h2>
           <p>
-            pgoverlay seeds with <code>pg_basebackup</code>, so a branch's first
-            boot is a crash recovery: Postgres replays WAL to bring the data
-            directory to a consistent state. That is a real, known cost, and it
-            was the obvious suspect: a slow, I/O-heavy recovery pass that
-            touches everything.
+            The first benchmark, a median of five runs in a Colima VM on an M1
+            Pro, branched a 5.00 GiB database in 61.9 seconds and left 5.05 GiB
+            in the branch's writable layer. No queries had run and no rows had
+            been written; the branch had only started. The 1 GiB dataset did the
+            same: 1.00 GiB of data, 1.05 GiB of writable layer. A partial copy
+            does not land on the dataset size at two scales. A full copy does.
           </p>
           <p>
-            The Postgres log refused to support it. The recovery it was blamed
-            on reported:
-          </p>
-          <p><code>redo done ... elapsed: 0.00 s</code></p>
-          <p>
-            Zero. The replay was not slow; the replay was nothing. Whatever was
-            burning a minute and materialising five gigabytes happened
-            <em>before</em> the work I had assumed was responsible, and I had
-            been reading the wrong side of the log.
-          </p>
-        </section>
-
-        <section>
-          <h2>The diagnosis</h2>
-          <p>
-            Before replaying any WAL, Postgres runs a pass called
-            <code>SyncDataDirectory</code>. Its job is to guarantee that nothing
-            left over from before the crash is sitting dirty in the page cache
-            unflushed. Under the default
-            <code>recovery_init_sync_method=fsync</code>, it does that the
-            literal way: it walks the entire data directory and opens
-            <em>every single file</em> read-write in order to
-            <code>fsync</code> it.
+            I suspected crash recovery: the seed is a
+            <code>pg_basebackup</code> copy, so every branch starts by
+            recovering it. The log said otherwise:
+            <code>redo done ... elapsed: 0.00 s</code>. Replay took no time, so
+            the minute went somewhere before it. Before replaying its
+            write-ahead log, Postgres runs <code>SyncDataDirectory</code>, which
+            flushes every file in the data directory to disk and opens each one
+            read-write to do it. On OverlayFS, opening a file from the read-only
+            seed that way copies the whole file into the branch, on the open,
+            before a byte is written. The durability pass copied the dataset.
           </p>
           <p>
-            On an ordinary filesystem that is cheap (an open, an fsync, a
-            close, mostly against already-clean files). On OverlayFS it is not,
-            because of one rule: opening a file that lives in the read-only
-            lower layer with <code>O_RDWR</code> forces a
-            <strong>copy-up</strong>. Not of the pages you touch. Of the whole
-            file, immediately, on open, before you have written a byte.
-          </p>
-          <p>
-            Those two behaviours compose into the exact opposite of the
-            product. The sync pass opens every file in the dataset read-write;
-            OverlayFS faithfully copies each one into the branch's writable
-            layer; and by the time Postgres is ready to accept its first
-            connection it has duplicated the entire database in the name of
-            preparing for a WAL replay that had nothing to replay.
+            A plausible story is not a diagnosis, so I reran it with one flag
+            changed: <code>recovery_init_sync_method=syncfs</code>, which
+            flushes the whole filesystem in one call instead of opening each
+            file. The writable layer came out at 16 KiB when recovery finished,
+            and the flag became the fix: creating a branch took 1.89 s and left
+            33.1 MiB, almost all of it log written at the end of recovery, at
+            both 1 and 5 GiB. The flag needs Postgres 14 or later on Linux, so
+            pgoverlay refuses Postgres 13 and older.
           </p>
         </section>
 
         <section>
-          <h2>Proving it rather than believing it</h2>
+          <h2>A SELECT is a read-write open</h2>
           <p>
-            That story is plausible, which is the problem with it. Two
-            measurements were cheap enough that there was no excuse for
-            shipping the explanation without them.
+            The next thing I measured was a branch that only reads. On a 488.5
+            MiB table, frozen on the source so that reading it had almost
+            nothing to write back, one <code>SELECT count(*)</code> grew a
+            branch from 34.6 MiB to 523.1 MiB. The file that appeared in the
+            writable layer was the whole table.
+          </p>
+          <p>
+            It is the same mechanism on the ordinary read path. Postgres stores
+            each table and index in files of up to 1 GiB, and opens every one of
+            them read-write, whatever the query is going to do. So a branch
+            copied every file it read, and the first query waited for the copy:
+            in a later run on a similar table, the first
+            <code>SELECT count(*)</code> took 19.4 s and the second 116 ms. No
+            recovery setting reaches this: it is how stock Postgres opens a file
+            to read it.
+          </p>
+        </section>
+
+        <section>
+          <h2>The options, measured before building one</h2>
+          <p>
+            I ran every candidate that could run on one host, against one table.
           </p>
           <ul class="plain">
             <li>
-              <strong>The size is not approximately the database; it is the
-                database.</strong>
-              5.05 GiB of writable layer against 5.00 GiB of data, and 1.05
-              against 1.00. A partial or incidental copy does not land on the
-              dataset size twice at two different scales. A full copy-up of
-              every file does.
+              <strong>OverlayFS <code>metacopy</code> and fuse-overlayfs</strong>
+              copied exactly the same bytes: both copy the data on any open with
+              write access.
             </li>
             <li>
-              <strong>A single-variable control run.</strong> Same image, same
-              dataset, same command, one flag changed:
-              <code>recovery_init_sync_method=syncfs</code>. The branch came up
-              with <strong>16 KiB</strong> in its writable layer. If the
-              mechanism were anything other than the sync method's file-open
-              behaviour, changing only the sync method could not have moved the
-              number by five orders of magnitude.
+              <strong>A loopback XFS pool</strong> gave block-level
+              copy-on-write on a plain ext4 host, but synchronous writes on it
+              ran at a third to two thirds of ext4's rate, and it needs a
+              privileged loop device that survives reboots. Deferred, not
+              rejected.
+            </li>
+            <li>
+              <strong>btrfs snapshots, dm-thin and qcow2</strong> are
+              block-level too, but need privileges, kernel modules desktop VMs
+              may lack, and fragile set-up.
+            </li>
+            <li>
+              <strong>A patched Postgres</strong> would give up the stock images
+              and mean a fork of every supported major version. Rejected without
+              building it.
+            </li>
+          </ul>
+          <p>
+            What was left was to change what the kernel is told, not what
+            Postgres does.
+          </p>
+        </section>
+
+        <section>
+          <h2>What v1.0.0 does</h2>
+          <ul class="plain">
+            <li>
+              <strong>Open read-only until the first write.</strong> A small
+              library preloaded into each branch's Postgres
+              (<code>LD_PRELOAD</code>) turns its read-write opens of table files
+              into read-only ones, so OverlayFS copies nothing. At a file's
+              first write it reopens the file read-write on the same descriptor,
+              and Postgres never notices. Each branch checks at start that its
+              kernel (Linux 4.19 or later) makes this safe for Postgres's other
+              processes; if it does not, the branch copies on open and reports
+              it.
+            </li>
+            <li>
+              <strong>Do the writes a read can cause once, in the seed.</strong>
+              A read in Postgres can write: the first read of a row records on
+              the page that its transaction committed, and reads prune old row
+              versions. A fresh <code>pg_basebackup</code> copy also has to
+              recover before it opens. pgoverlay recovers, freezes, analyses and
+              cleanly shuts down each seed once, so a read in a branch has no
+              recovery to run and no commit flags to set.
+            </li>
+            <li>
+              <strong>Clone instead of copy where the disk allows.</strong> On
+              XFS with reflinks, or on btrfs, OverlayFS clones the file instead
+              of copying it, and the filesystem then copies only the blocks that
+              change: on my test machine, a one-row <code>UPDATE</code> of a
+              113 MB table cost the branch 40 KiB. pgoverlay detects which it has
+              at startup, and on a host whose own disk is ext4 it can put its
+              volumes on an XFS or btrfs disk.
             </li>
           </ul>
         </section>
 
         <section>
-          <h2>The fix</h2>
+          <h2>The release gate</h2>
           <p>
-            One flag, in the container entrypoint that starts a branch's
-            Postgres:
+            I set one gate for the release: with the library, warm read-only
+            pgbench throughput had to stay within noise of copying on open, and
+            warm TPC-B within 5%. It ran on dedicated GitHub-hosted amd64 and
+            arm64 VMs, five rounds each with the order rotated every round, so
+            any drift on the host hit every configuration alike.
           </p>
-          <p>
-            <code
-              >exec docker-entrypoint.sh postgres -c
-              recovery_init_sync_method=syncfs</code
-            >
-          </p>
-          <p>
-            <code>syncfs()</code> flushes the entire filesystem containing the
-            data directory in one call, without opening individual files. The
-            durability argument is that this is a <em>superset</em> of what the
-            per-file pass covers. The property the pass exists to establish
-            still holds, so crash-recovery semantics are unchanged. What it
-            costs is specificity: <code>syncfs</code> flushes the whole
-            filesystem under the branch, and on a Docker host that filesystem
-            is shared with every other branch and container, so it costs extra
-            flush time when they write a lot. I first wrote here that a
-            branch's filesystem held nothing else. The overlay mount is the
-            branch's own; the filesystem under it is not.
-          </p>
-          <p>
-            It is not free. <code>syncfs</code> as a recovery init method is
-            Linux-only and Postgres 14 or newer, which puts a hard floor under
-            the project. Postgres 13 is therefore rejected when you register a
-            source, loudly, rather than silently accepting it and quietly
-            performing badly.
-          </p>
-        </section>
-
-        <section>
-          <h2>What changed, and how it was measured</h2>
           <div class="scroll">
             <table>
               <caption>
-                p50 of five runs per configuration on identical hardware, one
-                variable changed between the two rows. All five raw runs for
-                both tables are published in the repository rather than
-                summarised away.
+                amd64, medians of five rounds, pgbench scale 50 plus a 949 MiB
+                table. arm64 ran the same and passed the same gate. Raw runs,
+                hosts and what was not measured are in the repository.
               </caption>
               <thead>
                 <tr>
-                  <th scope="col">5 GiB database</th>
-                  <th scope="col" class="num">Create</th>
-                  <th scope="col" class="num">Writable layer</th>
+                  <th scope="col"></th>
+                  <th scope="col" class="num">Copy on open</th>
+                  <th scope="col" class="num">v1.0.0</th>
                 </tr>
               </thead>
               <tbody>
                 <tr>
-                  <th scope="row">Before (fsync, the default)</th>
-                  <td class="num">61.9 s</td>
-                  <td class="num">5.05 GiB</td>
+                  <th scope="row">
+                    Branch after a read-only run, disk not shared with the seed
+                  </th>
+                  <td class="num">753.1 MiB</td>
+                  <td class="num">1.6 MiB</td>
                 </tr>
                 <tr>
-                  <th scope="row">After (syncfs)</th>
-                  <td class="num">1.89 s</td>
-                  <td class="num">33.1 MiB</td>
+                  <th scope="row">Read-only tps, warm</th>
+                  <td class="num">118,064</td>
+                  <td class="num">116,833</td>
+                </tr>
+                <tr>
+                  <th scope="row">TPC-B tps, warm</th>
+                  <td class="num">11,823</td>
+                  <td class="num">11,648</td>
                 </tr>
               </tbody>
             </table>
           </div>
           <p>
-            Roughly 33× faster to create, and the storage a branch costs at rest
-            drops by more than two orders of magnitude. That storage number is
-            the one that decides whether you can afford a database per pull
-            request.
+            Beyond throughput, on amd64, I killed Postgres in the middle of
+            TPC-B: it restarted with its balances intact and
+            <code>pg_amcheck</code>, Postgres's corruption check, clean. On
+            Postgres 14 to 18 and the Alpine image, every read copied nothing.
           </p>
         </section>
 
         <section>
-          <h2>What is still wrong with this</h2>
+          <h2>What it still costs</h2>
           <div class="note">
             <p>
-              <strong>The cost moved. It did not disappear.</strong> OverlayFS
-              copies up whole files, and Postgres heap and index segments run to
-              1 GiB each. Before the fix, creation had already materialised
-              every file, so a later write only paid for the pages it dirtied: a
-              1% <code>UPDATE</code> grew the layer by about 179 MiB on the 5
-              GiB dataset. After the fix the layer starts at 33 MiB, so that
-              same <code>UPDATE</code> plus a checkpoint pays first-write
-              copy-up across every segment it touches and lands at 5.20 GiB.
+              <strong>On ext4, the first write to a table file copies the
+                file.</strong>
+              Up to 1 GiB, once per file per branch, and the wait lands where
+              Postgres next writes the page to disk, usually the checkpoint: on
+              the amd64 runner, the checkpoint after a one-row
+              <code>UPDATE</code> of a 949 MiB table took 5.51 s (4.09 s on
+              arm64). XFS or btrfs volumes make that a clone.
             </p>
             <p>
-              That number is worse and it is published anyway, next to the one
-              it replaced. The two are not measuring the same thing, and the
-              honest framing is that pgoverlay moved the cost from
-              pay-at-creation to pay-per-file-written. I claimed that for
-              branches that read a lot and write a little, which is what a
-              pull-request database does, that was strictly better. It was not;
-              see the update below. For a branch that rewrites its entire
-              dataset, it is a wash.
+              <strong>A branch that cannot run the library copies on
+                read.</strong>
+              A kernel that fails the check, or an image with no build of the
+              library, falls back to copying on open, and the branch reports it.
+            </p>
+            <p>
+              <strong>Also:</strong> branch containers need
+              <code>CAP_SYS_ADMIN</code> to mount their overlay (the Kubernetes
+              CSI mode needs no added capabilities); branches do not follow the
+              source after seeding; crash testing killed the process and did not
+              cut power; XFS on a fast disk and btrfs were not measured under
+              pgbench; and the library was not measured on Docker Desktop,
+              Colima, OrbStack or Kubernetes hostPath.
             </p>
           </div>
+        </section>
+
+        <section>
+          <h2>How it was built</h2>
           <p>
-            Two other things I would rather say than have someone find. The
-            safety argument for <code>syncfs</code> is an argument: it reasons
-            from what the two sync methods guarantee, and it has not been
-            demonstrated with fault injection. And when I first wrote this,
-            nothing in CI would have caught this regression coming back: the fix
-            was protected by a benchmark script that a human had to remember to
-            run. That has changed. A unit test fails if the flag leaves the
-            branch entrypoint, and integration tests fail if reads grow a
-            branch.
-          </p>
-          <p>
-            <strong>Update, v1.0.0.</strong> "Pay-per-file-written" was wrong
-            when I wrote it. Postgres opens table files read-write for reads
-            too, so a branch paid for every file it <em>opened</em>: in the
-            review before 1.0, one <code>SELECT count(*)</code> copied a 488.5
-            MiB table into a branch that had only read it. v1.0.0 fixes that
-            with an <code>LD_PRELOAD</code> shim that opens table files
-            read-only until the first write, and makes writes block-level on XFS
-            and btrfs.
-            <a href="../posts/a-select-copied-the-whole-table.html"
-              >The write-up</a
-            >
-            has the measurements.
-          </p>
-          <p>
-            The repository says outright that most of its commit history was
-            agent-assisted, and points at the two documents (the benchmark
-            record and the deep dives) that required diagnosis rather than
-            generation. The benchmark file still contains the pre-fix numbers
-            that contradicted the project's own thesis, including the one above
-            that looks better before the fix than after it.
+            Most of the commits were written with coding agents, which I run in
+            parallel git worktrees; I review, benchmark and integrate what they
+            write, and the repository says so. The benchmark file keeps every
+            number, including the ones that contradicted the design.
           </p>
         </section>
       </main>

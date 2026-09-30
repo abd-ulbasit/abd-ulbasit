@@ -81,8 +81,9 @@
               </span>
               <p>
                 Branching a 5 GiB Postgres database in pgoverlay, after finding
-                that Postgres opens every file read-write before WAL replay and
-                OverlayFS answers that with a full copy-up. The writable layer
+                that Postgres opens every file read-write before replaying its
+                log, and OverlayFS copies a file whole when it is opened that
+                way. The writable layer
                 went from 5.05 GiB to 33 MiB.
                 <a href="work/pgoverlay.html">The diagnosis →</a>
               </p>
@@ -110,11 +111,11 @@
               <span class="name">pgoverlay</span>
               <p>
                 Copy-on-write Postgres branches on plain Docker or Kubernetes,
-                built on OverlayFS: every branch shares one read-only base and
-                stores only its own changes. Branching a 5 GiB database took
-                61.9 s and left a 5.05 GiB writable layer inside a system whose
-                premise is that it copies nothing; the fix took it to 1.9 s and
-                33 MiB. v1.0.0 then stopped reads from copying tables too.
+                on OverlayFS by default: every branch shares one read-only base.
+                Reads copy no table data, and a write copies the file it touches,
+                or only the blocks it changes on XFS or btrfs. Its server,
+                branchd, routes every branch through one port, and a GitHub App
+                gives each pull request a branch of its own.
               </p>
               <div class="links">
                 <a href="https://github.com/abd-ulbasit/pgoverlay" rel="noopener"
