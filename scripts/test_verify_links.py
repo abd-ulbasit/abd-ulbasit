@@ -122,7 +122,7 @@ class BrokenSocialAndCanonicalTags(CheckerCase):
 
 PINNED = ("https://github.com/abd-ulbasit/goqueue/blob/"
           "beac5b4e727f47f1d991f40774948715542788bf/internal/storage/segment.go#L1121")
-BENCH_HEADING = "Before the fix: branch creation scaled with data size"
+BENCH_HEADING = "True copy-on-write (v1.0.0)"
 
 
 def canned_fetch(**responses):
