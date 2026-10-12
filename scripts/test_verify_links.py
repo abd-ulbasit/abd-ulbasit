@@ -83,6 +83,12 @@ class BrokenLinks(CheckerCase):
         os.remove(self.path("favicon.ico"))
         self.assertFails("no such file")
 
+    def test_vercel_analytics_script_is_allowed_but_a_typo_of_it_is_not(self):
+        # The real path has no file in the repo and must pass (the unmodified
+        # copy test covers that). A misspelt one is a dead script tag.
+        self.edit("index.html", "/_vercel/insights/script.js", "/_vercel/insight/script.js")
+        self.assertFails("no such file  /_vercel/insight/script.js")
+
     def test_fragment_with_no_matching_id(self):
         self.edit("index.html", 'href="#main"', 'href="#mian"')
         self.assertFails("no id='mian'")

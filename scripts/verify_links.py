@@ -93,6 +93,11 @@ BLOB = re.compile(r"^https://github\.com/([^/]+)/([^/]+)/blob/([^/]+)/(.+?)(?:#(
 SITEMAP_NS = "{http://www.sitemaps.org/schemas/sitemap/0.9}"
 IGNORED_SCHEMES = ("mailto:", "tel:", "javascript:", "data:")
 
+# Root-relative paths Vercel answers itself, with no file behind them in the
+# repository. Exact paths, not a /_vercel/ prefix: a typo such as
+# /_vercel/insight/script.js is a dead script tag and has to keep failing.
+PLATFORM_PATHS = ("/_vercel/insights/script.js",)
+
 # Extensions that mean "source, not a page". The web root is the repository
 # root, so a file with one of these is a public URL unless .vercelignore keeps
 # it out of the deployment. This list is what stops the next one being noticed
@@ -259,7 +264,7 @@ def check_page_links(rel, page, root, external, failures, pages):
     here = os.path.dirname(rel)
     for value, kind in page.links:
         where = "%s %s" % (rel, kind)
-        if value.startswith(IGNORED_SCHEMES):
+        if value.startswith(IGNORED_SCHEMES) or value in PLATFORM_PATHS:
             continue
 
         if value.startswith("http://") or value.startswith("https://"):
