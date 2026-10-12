@@ -287,6 +287,20 @@
           <h2 id="writing">Writing</h2>
           <ul class="rows">
             <li>
+              <span class="name">The 50 most-starred Helm charts, rendered for Kubernetes 1.37</span>
+              <p>
+                None of the 42 charts I could scan uses an API that Kubernetes
+                1.37 removes or deprecates, and three are blocked anyway:
+                cert-manager, Istio and the retired Ingress NGINX. Helm renders
+                all three without an error: it checks the chart's own
+                <code>kubeVersion</code>, not whether the project behind it
+                supports the target.
+              </p>
+              <div class="links">
+                <a href="posts/most-starred-helm-charts-kubernetes-1-37.html">Read</a>
+              </div>
+            </li>
+            <li>
               <span class="name">A SELECT copied the whole table</span>
               <p>
                 A copy-on-write Postgres branch that copied every table it read.
